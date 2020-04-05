@@ -126,6 +126,19 @@ short           TibiaAngle1[6];   //Actual Angle of the knee, decimals = 1
 short           TarsAngle1[6];	  //Actual Angle of the knee, decimals = 1
 #endif
 
+// actual head angles
+short HeadAnglePan;
+short HeadAngleTilt;
+short HeadAngleRot;
+
+// actual tail angles
+short TailAnglePan;
+short TailAngleTilt;
+
+// actual mandible angles
+short LeftMandibleAngle;
+short RightMandibleAngle;
+
 //--------------------------------------------------------------------
 //[POSITIONS SINGLE LEG CONTROL]
 
@@ -259,6 +272,7 @@ extern void SingleLegControl(void);
 extern void GaitSeq(void);
 extern void BalanceBody(void);
 extern void CheckAngles();
+extern void UpdateMandibles();
 
 extern void    PrintSystemStuff(void);            // Try to see why we fault...
 
@@ -290,10 +304,12 @@ void setup(){
     g_ServoDriver.SSCForwarder();
 
   //Checks to see if our Servo Driver support a GP Player
-  DBGSerial.write("Program Start 1\n\r");
+  DBGSerial.write("Program Start\n\r");
+  DBGSerial.write("Built: ");
+  DBGSerial.write(__TIMESTAMP__"\n\r");
+
   // debug stuff
   delay(10);
-
 
   //Turning off all the leds
   LedA = 0;
@@ -326,6 +342,23 @@ void setup(){
   BodyRotOffsetY = 0;        //Input Y offset value to adjust centerpoint of rotation
   BodyRotOffsetZ = 0;
 
+  // Head
+  g_InControlState.HeadAnglePan = 0;
+  g_InControlState.HeadAngleTilt = 0;
+  g_InControlState.HeadAngleRot = 0;
+  g_InControlState.LeftMandibleAngle = 0;
+  g_InControlState.RightMandibleAngle = 0;
+  HeadAnglePan = 0;
+  HeadAngleTilt = 0;
+  HeadAngleRot = 0;
+  LeftMandibleAngle = 0;
+  RightMandibleAngle = 0;
+
+  // Tail
+  g_InControlState.TailAnglePan = 0;
+  g_InControlState.TailAngleTilt = 0;
+  TailAnglePan = 0;
+  TailAngleTilt = 0;
 
   //Gait
   g_InControlState.GaitType = 1;  // 0; Devon wanted
@@ -373,6 +406,9 @@ void loop(void)
 
   //Gait
   GaitSeq();
+
+  // Mandibles
+  UpdateMandibles();
 
   //Balance calculations
   TotalTransX = 0;     //reset values used for calculation of balance
@@ -449,7 +485,7 @@ void loop(void)
         (abs(g_InControlState.TravelLength.y*2)>cTravelDeadZone)) {
       ServoMoveTime = NomGaitSpeed + (g_InControlState.InputTimeDelay*2) + g_InControlState.SpeedControl;
 
-      //Add aditional delay when Balance mode is on
+      //Add additional delay when Balance mode is on
       if (g_InControlState.BalanceMode)
         ServoMoveTime = ServoMoveTime + 100;
     } else //Movement speed excl. Walking
@@ -541,6 +577,9 @@ void StartUpdateServos()
     g_ServoDriver.OutputServoInfoForLeg(LegIndex, CoxaAngle1[LegIndex], FemurAngle1[LegIndex], TibiaAngle1[LegIndex]);
 #endif
   }
+  g_ServoDriver.OutputServoInfoHead(HeadAnglePan, HeadAngleTilt, HeadAngleRot);
+  g_ServoDriver.OutputServoInfoTail(TailAnglePan, TailAngleTilt);
+  g_ServoDriver.OutputServoInfoMandibles(LeftMandibleAngle, RightMandibleAngle);
 }
 
 
@@ -603,6 +642,12 @@ bool CheckVoltage() {
 #endif
 #endif
   return g_fLowVoltageShutdown;
+}
+
+void UpdateMandibles() {
+  // todo: check speed and pressure sensor
+  LeftMandibleAngle = g_InControlState.LeftMandibleAngle;
+  RightMandibleAngle = g_InControlState.RightMandibleAngle;
 }
 
 //--------------------------------------------------------------------

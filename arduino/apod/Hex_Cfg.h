@@ -1,6 +1,6 @@
 //====================================================================
-//Project Lynxmotion Phoenix
-//Description: 
+// Project Lynxmotion A-POD
+// Description:
 //    This is the hardware configuration file for the Hex Robot.
 //  
 //    This version of the Configuration file is set up to run on the
@@ -10,12 +10,14 @@
 //    by a Lynxmotion Servo controller SSC-32 and the user is using a Lynxmotion 
 //    PS2 to control the robot.
 //
-//Date: March 18, 2012
-//Programmer: Kurt (aka KurtE)
+// Programmer: Kurt Eckhardt (aka KurtE)
+//            tripod
 //
-//NEW IN V1.1 (2013-05-17)
+// NEW IN V2.0 (2020-04-05)
+//   - Support for Mandibles
+// NEW IN V1.1 (2013-05-17)
 //   - Support for Arduino Pro Mini on Bot Board (originally for Basic Atom Pro)
-//NEW IN V1.0
+// NEW IN V1.0
 //   - First Release
 //
 //====================================================================
@@ -131,6 +133,14 @@
 #define cLFTibiaPin     2   //Front Left leg Knee
 #define cLFTarsPin      3   // Tar
 
+#define cLMandPin       14  // Left Mandible
+#define cRMandPin       13  // Right Mandible
+#define cHeadPanPin     30  // Head Pan (left/right)
+#define cHeadTiltPin    12  // Head Tilt (up/down)
+#define cHeadRotPin     15  // Head Rotate
+
+#define cTailPanPin        28  // Tail Pan (left/right)
+#define cTailTiltPin    29  // Tail Tilt (upd/down)
 
 //--------------------------------------------------------------------
 //[MIN/MAX ANGLES]
@@ -187,6 +197,19 @@
 #define cLFTibiaMax1    900
 #define cLFTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
 #define cLFTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
+
+#define cHeadPanMin1    -500
+#define cHeadPanMax1     500
+#define cHeadTiltMin1   -500
+#define cHeadTiltMax1    500
+#define cHeadRotMin1    -500
+#define cHeadRotMax1     500
+
+#define cTailPanMin1    -500
+#define cTailPanMax1     500
+#define cTailTiltMin1   -500
+#define cTailTiltMax1    500
+
 
 //--------------------------------------------------------------------
 //[LEG DIMENSIONS]

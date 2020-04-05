@@ -11,25 +11,30 @@
 #define _INPUT_CONTROLLER_h_
 
 #include "Hex_Cfg.h"  // make sure we know what options are enabled...
-#if ARDUINO>99
+
+#if ARDUINO > 99
+
 #include <Arduino.h> // Arduino 1.0
+
 #else
 #include <Wprogram.h> // Arduino 0022
 #endif
 
 class InputController {
-  public:
-    void     Init(void);
-    void     ControlInput(void);
-    void     AllowControllerInterrupts(boolean fAllow);
+public:
+  void Init(void);
 
-  private:
-} ;   
+  void ControlInput(void);
+
+  void AllowControllerInterrupts(boolean fAllow);
+
+private:
+};
 
 typedef struct _Coord3D {
-    long      x;
-    long      y;
-    long      z;
+  long x;
+  long y;
+  long z;
 } COORD3D;
 
 
@@ -39,32 +44,45 @@ typedef struct _Coord3D {
 //      requested.
 //==============================================================================
 typedef struct _InControlState {
-     boolean		fHexOn;				//Switch to turn on Phoenix
-     boolean		fPrev_HexOn;			//Previous loop state 
+  boolean fHexOn;        //Switch to turn on Phoenix
+  boolean fPrev_HexOn;      //Previous loop state
 //Body position
-     COORD3D        BodyPos;
+  COORD3D BodyPos;
 
 //Body Inverse Kinematics
-     COORD3D        BodyRot1;               // X -Pitch, Y-Rotation, Z-Roll
+  COORD3D BodyRot1;               // X -Pitch, Y-Rotation, Z-Roll
 
 //[gait]
-     byte			GaitType;			//Gait type
+  byte GaitType;      //Gait type
 
-     short			LegLiftHeight;		//Current Travel height
-     COORD3D        TravelLength;            // X-Z or Length, Y is rotation.
+  short LegLiftHeight;    //Current Travel height
+  COORD3D TravelLength;            // X-Z or Length, Y is rotation.
 
-//[Single Leg Control]
-     byte			SelectedLeg;
-     COORD3D        SLLeg;                // 
-     boolean		fSLHold;		 	//Single leg control mode
+// Head Control
+  short HeadAnglePan;
+  short HeadAngleTilt;
+  short HeadAngleRot;
+
+// Tail Control
+  short TailAnglePan;
+  short TailAngleTilt;
+
+  // Mandible control
+  short LeftMandibleAngle;
+  short RightMandibleAngle;
+
+  //[Single Leg Control]
+  byte SelectedLeg;
+  COORD3D SLLeg;                //
+  boolean fSLHold;      //Single leg control mode
 
 
 //[Balance]
-     boolean        BalanceMode;
+  boolean BalanceMode;
 
 //[TIMING]
-     byte			InputTimeDelay;	//Delay that depends on the input to get the "sneaking" effect
-     word			SpeedControl;	//Adjustible Delay
+  byte InputTimeDelay;  //Delay that depends on the input to get the "sneaking" effect
+  word SpeedControl;  //Adjustible Delay
 } INCONTROLSTATE;
 
 

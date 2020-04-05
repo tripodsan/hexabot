@@ -32,7 +32,10 @@ class ServoDriver {
     void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1, short sTarsAngle1);
 #else
     void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1);
-#endif    
+    void OutputServoInfoHead(short pan, short tilt, short rot);
+    void OutputServoInfoTail(short pan, short tilt);
+    void OutputServoInfoMandibles(short left, short right);
+#endif
     void CommitServoDriver(word wMoveTime);
     void FreeServos(void);
     
