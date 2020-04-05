@@ -22,23 +22,15 @@
 //
 //====================================================================
 
-//==================================================================================================================================
-//==================================================================================================================================
-//==================================================================================================================================
 //[CONDITIONAL COMPILING] - COMMENT IF NOT WANTED
 // Define other optional components to be included or not...
 
 //comment if terminal monitor is not required
 #define OPT_TERMINAL_MONITOR  
 
-//uncomment the board you want to use
-#define __BOTBOARDUINO__    //botboarduino board
-//#define __BOTBOARD_ARDUINOPROMINI__  //arduino pro mini on botboard (originally for BasicAtomPro)
-
-//====================================================================
-#ifdef OPT_TERMINAL_MONITOR   // turning off terminal monitor will turn these off as well...
-#define OPT_SSC_FORWARDER  // only useful if terminal monitor is enabled
-#define OPT_FIND_SERVO_OFFSETS    // Only useful if terminal monitor is enabled
+#ifdef OPT_TERMINAL_MONITOR       // turning off terminal monitor will turn these off as well...
+  #define OPT_SSC_FORWARDER       // only useful if terminal monitor is enabled
+  #define OPT_FIND_SERVO_OFFSETS  // Only useful if terminal monitor is enabled
 #endif
 
 // Which type of control(s) do you want to compile in
@@ -51,11 +43,6 @@
 
 #define USEPS2
 
-//==================================================================================================================================
-//==================================================================================================================================
-//==================================================================================================================================
-// CHR-3
-//==================================================================================================================================
 #define USE_SSC32
 //#define	cSSC_BINARYMODE	1			// Define if your SSC-32 card supports binary mode.
 
@@ -67,75 +54,49 @@
 #define cSSC_BAUD   115200   //SSC32 BAUD rate
 
 //--------------------------------------------------------------------
-//[Botboarduino Pin Numbers]
-#ifdef __BOTBOARDUINO__
-  #define SOUND_PIN       5   // Botboarduino JR pin number
-  #define PS2_SEL         6  // On the PS2 receiver this pin may be called ATT (attention)
-  #define PS2_CMD         7
-  #define PS2_DAT         8
-  #define PS2_CLK         9
-// If we are using a SSC-32 then:
-// If were are running on an Arduino Mega we will use one of the hardware serial port, default to Serial1 above.
-// If on Non mega, if the IO pins are set to 0, we will overload the hardware Serial port 
-// Else we will user SoftwareSerial to talk to the SSC-32
-  #define cSSC_OUT       12   // Output pin for Botboard - Input of SSC32 (RX red)
-  #define cSSC_IN        13   // Input pin for Botboard - Output of SSC32 (TX yellow)
-#endif
-
-#ifdef __BOTBOARD_ARDUINOPROMINI__
-  #define SOUND_PIN      11   // Bot Board JR pin number (with Arduino Pro Mini plugged)
-  #define PS2_DAT        14       
-  #define PS2_CMD        15
-  #define PS2_SEL        16
-  #define PS2_CLK        17
-// If we are using a SSC-32 then:
-// If were are running on an Arduino Mega we will use one of the hardware serial port, default to Serial1 above.
-// If on Non mega, if the IO pins are set to 0, we will overload the hardware Serial port 
-// Else we will user SoftwareSerial to talk to the SSC-32
-  #define cSSC_OUT       10   //Output pin for Botboard - Input of SSC32 (Yellow)
-  #define cSSC_IN         9   //Input pin for Botboard - Output of SSC32 (Blue)
-#endif
+// [BotBoarduino]
+#define SOUND_PIN       5  // Botboarduino JR pin number
+#define PS2_SEL         6  // On the PS2 receiver this pin may be called ATT (attention)
+#define PS2_CMD         7
+#define PS2_DAT         8
+#define PS2_CLK         9
+#define cSSC_OUT       12  // Output pin for Botboard - Input of SSC32 (RX red)
+#define cSSC_IN        13  // Input pin for Botboard - Output of SSC32 (TX yellow)
 
 //====================================================================
 //[SSC PIN NUMBERS]
 #define cRRCoxaPin      24   //Rear Right leg Hip Horizontal
 #define cRRFemurPin     25   //Rear Right leg Hip Vertical
 #define cRRTibiaPin     26  //Rear Right leg Knee
-#define cRRTarsPin      27   // Tar
 
 #define cRMCoxaPin      20   //Middle Right leg Hip Horizontal
 #define cRMFemurPin     21   //Middle Right leg Hip Vertical
 #define cRMTibiaPin     22   //Middle Right leg Knee
-#define cRMTarsPin      23   // Tar
 
 #define cRFCoxaPin      16   //Front Right leg Hip Horizontal
 #define cRFFemurPin     17   //Front Right leg Hip Vertical
 #define cRFTibiaPin     18   //Front Right leg Knee
-#define cRFTarsPin      19   // Tar
 
 #define cLRCoxaPin      8   //Rear Left leg Hip Horizontal
 #define cLRFemurPin     9   //Rear Left leg Hip Vertical
 #define cLRTibiaPin     10   //Rear Left leg Knee
-#define cLRTarsPin      11   // Tar
 
 #define cLMCoxaPin      4   //Middle Left leg Hip Horizontal
 #define cLMFemurPin     5   //Middle Left leg Hip Vertical
 #define cLMTibiaPin     6   //Middle Left leg Knee
-#define cLMTarsPin      7   // Tar
 
 #define cLFCoxaPin      0   //Front Left leg Hip Horizontal
 #define cLFFemurPin     1   //Front Left leg Hip Vertical
 #define cLFTibiaPin     2   //Front Left leg Knee
-#define cLFTarsPin      3   // Tar
 
 #define cLMandPin       14  // Left Mandible
 #define cRMandPin       13  // Right Mandible
-#define cHeadPanPin     30  // Head Pan (left/right)
-#define cHeadTiltPin    12  // Head Tilt (up/down)
+#define cHeadPanPin     30  // Head Pan (horizontal)
+#define cHeadTiltPin    12  // Head Tilt (vertical)
 #define cHeadRotPin     15  // Head Rotate
 
-#define cTailPanPin        28  // Tail Pan (left/right)
-#define cTailTiltPin    29  // Tail Tilt (upd/down)
+#define cTailPanPin     28  // Tail Pan (horizontal)
+#define cTailTiltPin    29  // Tail Tilt (vertical)
 
 //--------------------------------------------------------------------
 //[MIN/MAX ANGLES]
@@ -145,8 +106,6 @@
 #define cRRFemurMax1    750
 #define cRRTibiaMin1    -530
 #define cRRTibiaMax1    900
-#define cRRTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cRRTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cRMCoxaMin1     -650      //Mechanical limits of the Right Middle Leg
 #define cRMCoxaMax1     650
@@ -154,8 +113,6 @@
 #define cRMFemurMax1    750
 #define cRMTibiaMin1    -530
 #define cRMTibiaMax1    900
-#define cRMTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cRMTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cRFCoxaMin1     -650      //Mechanical limits of the Right Front Leg
 #define cRFCoxaMax1     650
@@ -163,8 +120,6 @@
 #define cRFFemurMax1    750
 #define cRFTibiaMin1    -530
 #define cRFTibiaMax1    900
-#define cRFTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cRFTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cLRCoxaMin1     -650      //Mechanical limits of the Left Rear Leg
 #define cLRCoxaMax1     650
@@ -172,8 +127,6 @@
 #define cLRFemurMax1    750
 #define cLRTibiaMin1    -530
 #define cLRTibiaMax1    900
-#define cLRTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cLRTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cLMCoxaMin1     -650      //Mechanical limits of the Left Middle Leg
 #define cLMCoxaMax1     650
@@ -181,8 +134,6 @@
 #define cLMFemurMax1    750
 #define cLMTibiaMin1    -530
 #define cLMTibiaMax1    900
-#define cLMTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cLMTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cLFCoxaMin1     -650      //Mechanical limits of the Left Front Leg
 #define cLFCoxaMax1     650
@@ -190,8 +141,6 @@
 #define cLFFemurMax1    750
 #define cLFTibiaMin1    -530
 #define cLFTibiaMax1    900
-#define cLFTarsMin1     -1300	//4DOF ONLY - In theory the kinematics can reach about -160 deg
-#define cLFTarsMax1	500	//4DOF ONLY - The kinematics will never exceed 23 deg though..
 
 #define cHeadPanMin1    -500
 #define cHeadPanMax1     500
@@ -205,45 +154,36 @@
 #define cTailTiltMin1   -500
 #define cTailTiltMax1    500
 
-
 //--------------------------------------------------------------------
 //[LEG DIMENSIONS]
 //Universal dimensions for each leg in mm
 #define cXXCoxaLength     29    // This is for CH3-R with Type 3 legs
 #define cXXFemurLength    57
 #define cXXTibiaLength    141
-#define cXXTarsLength     85    // 4DOF only...
 
 #define cRRCoxaLength     cXXCoxaLength	    //Right Rear leg
 #define cRRFemurLength    cXXFemurLength
 #define cRRTibiaLength    cXXTibiaLength
-#define cRRTarsLength	  cXXTarsLength	    //4DOF ONLY
 
 #define cRMCoxaLength     cXXCoxaLength	    //Right middle leg
 #define cRMFemurLength    cXXFemurLength
 #define cRMTibiaLength    cXXTibiaLength
-#define cRMTarsLength	  cXXTarsLength	    //4DOF ONLY
 
 #define cRFCoxaLength     cXXCoxaLength	    //Rigth front leg
 #define cRFFemurLength    cXXFemurLength
 #define cRFTibiaLength    cXXTibiaLength
-#define cRFTarsLength	  cXXTarsLength    //4DOF ONLY
 
 #define cLRCoxaLength     cXXCoxaLength	    //Left Rear leg
 #define cLRFemurLength    cXXFemurLength
 #define cLRTibiaLength    cXXTibiaLength
-#define cLRTarsLength	  cXXTarsLength    //4DOF ONLY
 
 #define cLMCoxaLength     cXXCoxaLength	    //Left middle leg
 #define cLMFemurLength    cXXFemurLength
 #define cLMTibiaLength    cXXTibiaLength
-#define cLMTarsLength	  cXXTarsLength	    //4DOF ONLY
 
 #define cLFCoxaLength     cXXCoxaLength	    //Left front leg
 #define cLFFemurLength    cXXFemurLength
 #define cLFTibiaLength    cXXTibiaLength
-#define cLFTarsLength	  cXXTarsLength	    //4DOF ONLY
-
 
 //--------------------------------------------------------------------
 //[BODY DIMENSIONS]
@@ -299,10 +239,4 @@
 #define cLFInitPosX     CHexInitXZCos60      //Start positions of the Left Front leg
 #define cLFInitPosY     CHexInitY
 #define cLFInitPosZ     -CHexInitXZSin60
-//--------------------------------------------------------------------
-//[Tars factors used in formula to calc Tarsus angle relative to the ground]
-#define cTarsConst	720	//4DOF ONLY
-#define cTarsMulti	2	//4DOF ONLY
-#define cTarsFactorA	70	//4DOF ONLY
-#define cTarsFactorB	60	//4DOF ONLY
-#define cTarsFactorC	50	//4DOF ONLY
+

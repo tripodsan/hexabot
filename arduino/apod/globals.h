@@ -5,11 +5,11 @@
 //==============================================================================
 #ifndef _HEX_GLOBALS_H_
 #define _HEX_GLOBALS_H_
-#include <stdarg.h>
-#include <SoftwareSerial.h>        // Beta 11 newsoftware serial...
-#include "Hex_Cfg.h"
+#include <SoftwareSerial.h>
+#include "config.h"
 #include "ServoDriver.h"
 #include "InputController.h"
+
 //=============================================================================
 //[CONSTANTS]
 //=============================================================================
@@ -35,8 +35,8 @@
 
 
 #define NUM_GAITS    5
-extern void GaitSelect(void);
-extern short SmoothControl (short CtrlMoveInp, short CtrlMoveOut, byte CtrlDivider);
+extern void GaitSelect();
+extern short SmoothControl(short CtrlMoveInp, short CtrlMoveOut, byte CtrlDivider);
 
 
 //-----------------------------------------------------------------------------
@@ -97,12 +97,12 @@ extern void MSound(uint8_t _pin, byte cNotes, ...);
 
 
 // The defined controller must provide the following
-extern void InitController(void);
-extern void	ControlInput(void);
+extern void InitController();
+extern void	ControlInput();
 extern void	AllowControllerInterrupts(boolean fAllow);
 
 
-extern bool CheckVoltage(void);
+extern bool CheckVoltage();
 
 // debug handler...
 extern boolean g_fDBGHandleError;

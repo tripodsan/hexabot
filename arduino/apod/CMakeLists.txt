@@ -8,14 +8,14 @@ set(ARDUINO_CPU atmega328)
 project(${PROJECT_NAME})
 
 # Define additional source and header files or default arduino sketch files
-set(${PROJECT_NAME}_SRCS phoenix_driver_ssc32.cpp PS2_controller.cpp)
+set(${PROJECT_NAME}_SRCS apod.cpp ServoDriver.cpp InputController.cpp)
 #set(${PROJECT_NAME}_HDRS )
 
 ### Additional static libraries to include in the target.
 # set(${PROJECT_NAME}_LIBS)
 
 ### Main sketch file
-set(${PROJECT_NAME}_SKETCH apod_arduino.ino)
+set(${PROJECT_NAME}_SKETCH main.ino)
 
 ### Add project directories into the build
 # add_subdirectory()

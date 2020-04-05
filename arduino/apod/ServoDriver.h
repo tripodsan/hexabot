@@ -9,7 +9,7 @@
 #ifndef _Servo_Driver_h_
 #define _Servo_Driver_h_
 
-#include "Hex_Cfg.h"  // make sure we know what options are enabled...
+#include "config.h"  // make sure we know what options are enabled...
 #include <Arduino.h>
 
 class ServoDriver {

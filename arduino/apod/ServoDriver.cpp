@@ -5,7 +5,7 @@
 // the servos.
 //====================================================================
 #include <Arduino.h>
-#include "Hex_Globals.h"
+#include "globals.h"
 #include "ServoDriver.h"
 
 #define NUMSERVOSPERLEG 3
@@ -256,7 +256,7 @@ void ServoDriver::CommitServoDriver(word wMoveTime) {
 //--------------------------------------------------------------------
 //[FREE SERVOS] Frees all the servos
 //--------------------------------------------------------------------
-void ServoDriver::FreeServos(void) {
+void ServoDriver::FreeServos() {
   g_InputController.AllowControllerInterrupts(false);    // If on xbee on hserial tell hserial to not processess...
   for (byte LegIndex = 0; LegIndex < 32; LegIndex++) {
     SSCSerial.print("#");
@@ -274,7 +274,7 @@ void ServoDriver::FreeServos(void) {
 //==============================================================================
 #ifdef OPT_SSC_FORWARDER
 
-void ServoDriver::SSCForwarder(void) {
+void ServoDriver::SSCForwarder() {
   MSound(SOUND_PIN, 1, 1000, 2000);  //sound SOUND_PIN, [50\4000]
   delay(2000);
   int sChar;

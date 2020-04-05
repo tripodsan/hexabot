@@ -73,7 +73,7 @@
 //====================================================================
 // [Include files]
 #include <Arduino.h>
-#include "Hex_Globals.h"
+#include "globals.h"
 
 #ifdef USEPS2
 
@@ -84,8 +84,6 @@
 #define TRANSLATEMODE     1
 #define ROTATEMODE        2
 #define SINGLELEGMODE     3
-#define GPPLAYERMODE      4
-
 
 #define cTravelDeadZone 4      //The deadzone for the analog input from the remote
 #define  MAXPS2ERRORCNT  5     // How many times through the loop will we go before shutting off robot?
@@ -112,7 +110,7 @@ byte GPSeq;             //Number of the sequence
 // some external or forward function references.
 extern void MSound(uint8_t _pin, byte cNotes, ...);
 
-extern void PS2TurnRobotOff(void);
+extern void PS2TurnRobotOff();
 
 //==============================================================================
 // This is The function that is called by the Main program to initialize
@@ -121,7 +119,7 @@ extern void PS2TurnRobotOff(void);
 //==============================================================================
 
 // If both PS2 and XBee are defined then we will become secondary to the xbee
-void InputController::Init(void) {
+void InputController::Init() {
   int error;
 
   //error = ps2x.config_gamepad(57, 55, 56, 54);  // Setup gamepad (clock, command, attention, data) pins
@@ -153,7 +151,7 @@ void InputController::AllowControllerInterrupts(boolean fAllow) {
 // This is The main code to input function to read inputs from the PS2 and then
 //process any commands.
 //==============================================================================
-void InputController::ControlInput(void) {
+void InputController::ControlInput() {
   // Then try to receive a packet of information from the PS2.
   // Then try to receive a packet of information from the PS2.
   ps2x.read_gamepad();          //read controller and set large motor to spin at 'vibrate' speed
@@ -387,7 +385,7 @@ void InputController::ControlInput(void) {
 //==============================================================================
 // PS2TurnRobotOff - code used couple of places so save a little room...
 //==============================================================================
-void PS2TurnRobotOff(void) {
+void PS2TurnRobotOff() {
   //Turn off
   g_InControlState.BodyPos.x = 0;
   g_InControlState.BodyPos.y = 0;
