@@ -12,19 +12,13 @@
 
 #include "Hex_Cfg.h"  // make sure we know what options are enabled...
 
-#if ARDUINO > 99
-
-#include <Arduino.h> // Arduino 1.0
-
-#else
-#include <Wprogram.h> // Arduino 0022
-#endif
+#include <Arduino.h>
 
 class InputController {
 public:
-  void Init(void);
+  void Init();
 
-  void ControlInput(void);
+  void ControlInput();
 
   void AllowControllerInterrupts(boolean fAllow);
 

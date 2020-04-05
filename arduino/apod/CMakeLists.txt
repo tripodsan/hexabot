@@ -33,7 +33,7 @@ link_directories(${CMAKE_HOME_DIRECTORY}/../libs)
 #### Additional settings for programmer. From programmers.txt
 # set(${PROJECT_NAME}_PROGRAMMER avrispmkii)
 set(${PROJECT_NAME}_PORT /dev/cu.usbserial-A4K1RK7J)
-# set(diecimila.upload.speed 9600)
+# set(diecimila.upload.speed 115200)
 
 ## Verbose build process
 # set(${PROJECT_NAME}_AFLAGS -v)

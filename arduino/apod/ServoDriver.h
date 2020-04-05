@@ -10,51 +10,35 @@
 #define _Servo_Driver_h_
 
 #include "Hex_Cfg.h"  // make sure we know what options are enabled...
-#if ARDUINO>99
-#include <Arduino.h> // Arduino 1.0
-#else
-#include <Wprogram.h> // Arduino 0022
-#endif
+#include <Arduino.h>
 
 class ServoDriver {
-  public:
-    void Init(void);
+public:
+  void Init();
 
-#ifdef OPT_GPPLAYER    
-    inline boolean  FIsGPEnabled(void) {return _fGPEnabled;};
-    boolean         FIsGPSeqDefined(uint8_t iSeq);
-    inline boolean  FIsGPSeqActive(void) {return _fGPActive;};
-    void            GPStartSeq(uint8_t iSeq);
-    void            GPPlayer(void);
-#endif
-    void BeginServoUpdate(void);    // Start the update 
-#ifdef c4DOF
-    void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1, short sTarsAngle1);
-#else
-    void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1);
-    void OutputServoInfoHead(short pan, short tilt, short rot);
-    void OutputServoInfoTail(short pan, short tilt);
-    void OutputServoInfoMandibles(short left, short right);
-#endif
-    void CommitServoDriver(word wMoveTime);
-    void FreeServos(void);
-    
+  void BeginServoUpdate();
+
+  void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1);
+
+  void OutputServoInfoHead(short pan, short tilt, short rot);
+
+  void OutputServoInfoTail(short pan, short tilt);
+
+  void OutputServoInfoMandibles(short left, short right);
+
+  void CommitServoDriver(word wMoveTime);
+
+  void FreeServos();
+
 #ifdef OPT_FIND_SERVO_OFFSETS
-    void FindServoOffsets(void);  // Needs to be different depending on which driver
-#endif    
-    // Optional code used to forward commands from debug terminal to SSC prot...
+  // Needs to be different depending on which driver
+  void FindServoOffsets();
+#endif
+
 #ifdef OPT_SSC_FORWARDER
-    void SSCForwarder(void);
+  // Optional code used to forward commands from debug terminal to SSC prot...
+  void SSCForwarder();
 #endif
-
-  private:
-  
-#ifdef OPT_GPPLAYER    
-    boolean _fGPEnabled;     // IS GP defined for this servo driver?
-    boolean _fGPActive;      // Is a sequence currently active - May change later when we integrate in sequence timing adjustment code
-    uint8_t    _iSeq;        // current sequence we are running
-#endif
-
-} ;   
+};
 
 #endif //_Servo_Driver_h_

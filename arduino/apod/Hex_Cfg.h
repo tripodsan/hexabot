@@ -28,9 +28,6 @@
 //[CONDITIONAL COMPILING] - COMMENT IF NOT WANTED
 // Define other optional components to be included or not...
 
-//uncomment the following line to activate 4 DoF
-//#define c4DOF
-
 //comment if terminal monitor is not required
 #define OPT_TERMINAL_MONITOR  
 
@@ -43,8 +40,6 @@
 #define OPT_SSC_FORWARDER  // only useful if terminal monitor is enabled
 #define OPT_FIND_SERVO_OFFSETS    // Only useful if terminal monitor is enabled
 #endif
-
-#define OPT_GPPLAYER
 
 // Which type of control(s) do you want to compile in
 #define DBGSerial         Serial
@@ -75,16 +70,16 @@
 //[Botboarduino Pin Numbers]
 #ifdef __BOTBOARDUINO__
   #define SOUND_PIN       5   // Botboarduino JR pin number
-  #define PS2_DAT         12        
-  #define PS2_CMD         11
-  #define PS2_SEL         10  // On the PS2 receiver this pin may be called ATT (attention)
-  #define PS2_CLK         13
+  #define PS2_SEL         6  // On the PS2 receiver this pin may be called ATT (attention)
+  #define PS2_CMD         7
+  #define PS2_DAT         8
+  #define PS2_CLK         9
 // If we are using a SSC-32 then:
 // If were are running on an Arduino Mega we will use one of the hardware serial port, default to Serial1 above.
 // If on Non mega, if the IO pins are set to 0, we will overload the hardware Serial port 
 // Else we will user SoftwareSerial to talk to the SSC-32
-  #define cSSC_OUT       8   //Output pin for Botboard - Input of SSC32 (Yellow)
-  #define cSSC_IN        9   //Input pin for Botboard - Output of SSC32 (Blue)
+  #define cSSC_OUT       12   // Output pin for Botboard - Input of SSC32 (RX red)
+  #define cSSC_IN        13   // Input pin for Botboard - Output of SSC32 (TX yellow)
 #endif
 
 #ifdef __BOTBOARD_ARDUINOPROMINI__

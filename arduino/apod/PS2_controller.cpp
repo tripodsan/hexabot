@@ -1,84 +1,78 @@
 //====================================================================
-//Project Lynxmotion Phoenix
-//Description: Phoenix, control file.
-//The control input subroutine for the phoenix software is placed in this file.
-//Can be used with V2.0 and above
-//Configuration version: V1.0
-//Date: 25-10-2009
-//Programmer: Jeroen Janssen (aka Xan)
-//             Kurt Eckhardt (aka KurtE) - converted to c ported to Arduino...
+// Project Lynxmotion Phoenix
+// Description: Phoenix, control file.
+// The control input subroutine for the phoenix software is placed in this file.
+// Can be used with V2.0 and above
+// Configuration version: V1.0
+// Date: 25-10-2009
+// Programmer: Jeroen Janssen (aka Xan)
+//             Kurt Eckhardt (aka KurtE)
+//             tripod
 //
-//Hardware setup: PS2 version
-// 
-//NEW IN V1.0
-//- First Release
+// Hardware setup: PS2 version
 //
-//Walk method 1:
-//- Left StickWalk/Strafe
-//- Right StickRotate
+// NEW IN V1.0
+// - First Release
 //
-//Walk method 2:
-//- Left StickDisable
-//- Right StickWalk/Rotate
+// Walk method 1:
+// - Left StickWalk/Strafe
+// - Right StickRotate
+//
+// Walk method 2:
+// - Left StickDisable
+// - Right StickWalk/Rotate
 //
 //
-//PS2 CONTROLS:
-//[Common Controls]
-//- StartTurn on/off the bot
-//- L1Toggle Shift mode
-//- L2Toggle Rotate mode
-//- CircleToggle Single leg mode
-//   - Square        Toggle Balance mode
-//- TriangleMove body to 35 mm from the ground (walk pos) 
-//and back to the ground
-//- D-Pad upBody up 10 mm
-//- D-Pad downBody down 10 mm
-//- D-Pad leftdecrease speed with 50mS
-//- D-Pad rightincrease speed with 50mS
+// PS2 CONTROLS:
+// [Common Controls]
+// - StartTurn on/off the bot
+// - L1Toggle Shift mode
+// - L2Toggle Rotate mode
+// - CircleToggle Single leg mode
+//    - Square        Toggle Balance mode
+// - TriangleMove body to 35 mm from the ground (walk pos)
+// and back to the ground
+// - D-Pad upBody up 10 mm
+// - D-Pad downBody down 10 mm
+// - D-Pad leftdecrease speed with 50mS
+// - D-Pad rightincrease speed with 50mS
 //
-//[Walk Controls]
-//- selectSwitch gaits
-//- Left Stick(Walk mode 1) Walk/Strafe
-// (Walk mode 2) Disable
-//- Right Stick(Walk mode 1) Rotate, 
-//(Walk mode 2) Walk/Rotate
-//- R1Toggle Double gait travel speed
-//- R2Toggle Double gait travel length
+// [Walk Controls]
+// - selectSwitch gaits
+// - Left Stick(Walk mode 1) Walk/Strafe
+//  (Walk mode 2) Disable
+// - Right Stick(Walk mode 1) Rotate,
+// (Walk mode 2) Walk/Rotate
+// - R1Toggle Double gait travel speed
+// - R2Toggle Double gait travel length
 //
-//[Shift Controls]
-//- Left StickShift body X/Z
-//- Right StickShift body Y and rotate body Y
+// [Shift Controls]
+// - Left StickShift body X/Z
+// - Right StickShift body Y and rotate body Y
 //
-//[Rotate Controls]
-//- Left StickRotate body X/Z
-//- Right StickRotate body Y
+// [Rotate Controls]
+// - Left StickRotate body X/Z
+// - Right StickRotate body Y
 //
-//[Single leg Controls]
-//- selectSwitch legs
-//- Left StickMove Leg X/Z (relative)
-//- Right StickMove Leg Y (absolute)
-//- R2Hold/release leg position
+// [Single leg Controls]
+// - selectSwitch legs
+// - Left StickMove Leg X/Z (relative)
+// - Right StickMove Leg Y (absolute)
+// - R2Hold/release leg position
 //
-//[GP Player Controls]
-//- selectSwitch Sequences
-//- R2Start Sequence
+// [GP Player Controls]
+// - selectSwitch Sequences
+// - R2Start Sequence
 //
-// [Gripper]
-// - L1 Open Mandibles
-// - L2 Close Mandibles
-// - L2 + D-Pad left Decrease gripper torque
-// - L2 + D-Pad right Increase gripper torque
+//  [Gripper]
+//  - L1 Open Mandibles
+//  - L2 Close Mandibles
+//  - L2 + D-Pad left Decrease gripper torque
+//  - L2 + D-Pad right Increase gripper torque
 
 //====================================================================
 // [Include files]
-#if ARDUINO > 99
-
-#include <Arduino.h> // Arduino 1.0
-
-#else
-#include <Wprogram.h> // Arduino 0022
-#endif
-
+#include <Arduino.h>
 #include "Hex_Globals.h"
 
 #ifdef USEPS2
@@ -238,18 +232,6 @@ void InputController::ControlInput(void) {
         }
       }
 
-#ifdef OPT_GPPLAYER
-      // GP Player Mode X
-      if (ps2x.ButtonPressed(PSB_CROSS)) { // X - Cross Button Test
-        MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
-        if (ControlMode != GPPLAYERMODE) {
-          ControlMode = GPPLAYERMODE;
-          GPSeq = 0;
-        } else
-          ControlMode = WALKMODE;
-      }
-#endif // OPT_GPPLAYER
-
       //[Common functions]
       //Switch Balance mode on/off
       if (ps2x.ButtonPressed(PSB_SQUARE)) { // Square Button Test
@@ -383,28 +365,6 @@ void InputController::ControlInput(void) {
           g_InControlState.fSLHold = !g_InControlState.fSLHold;
         }
       }
-
-#ifdef OPT_GPPLAYER
-      //[GPPlayer functions]
-      if (ControlMode == GPPLAYERMODE) {
-
-        //Switch between sequences
-        if (ps2x.ButtonPressed(PSB_SELECT)) { // Select Button Test
-          if (!g_ServoDriver.FIsGPSeqActive()) {
-            if (GPSeq < 5) {  //Max sequence
-              MSound(SOUND_PIN, 1, 50, 1500);  //sound SOUND_PIN, [50\3000]
-              GPSeq = GPSeq + 1;
-            } else {
-              MSound(SOUND_PIN, 2, 50, 2000, 50, 2250);//Sound SOUND_PIN,[50\4000, 50\4500]
-              GPSeq = 0;
-            }
-          }
-        }
-        //Start Sequence
-        if (ps2x.ButtonPressed(PSB_R2))// R2 Button Test
-          g_ServoDriver.GPStartSeq(GPSeq);
-      }
-#endif // OPT_GPPLAYER
 
       //Calculate walking time delay
       g_InControlState.InputTimeDelay = 128 - max(max(abs(ps2x.Analog(PSS_LX) - 128), abs(ps2x.Analog(PSS_LY) - 128)),
