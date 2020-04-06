@@ -29,6 +29,8 @@
 #define ROTATEMODE        2
 #define SINGLELEGMODE     3
 
+static const char* MODE_NAMES[] = {"Walk", "Translate", "Rotate", "Single Leg"};
+
 #define cTravelDeadZone 4      //The deadzone for the analog input from the remote
 #define  MAXPS2ERRORCNT  5     // How many times through the loop will we go before shutting off robot?
 
@@ -46,6 +48,7 @@ static short g_BodyYOffset;
 static short g_sPS2ErrorCnt;
 static short g_BodyYShift;
 static byte ControlMode;
+static byte PrevControlMode;
 static bool DoubleHeightOn;
 static bool DoubleTravelOn;
 static bool WalkMethod;
@@ -75,6 +78,7 @@ void InputController::Init() {
   g_sPS2ErrorCnt = 0;  // error count
 
   ControlMode = WALKMODE;
+  PrevControlMode = WALKMODE;
   DoubleHeightOn = false;
   DoubleTravelOn = false;
   WalkMethod = false;
@@ -291,10 +295,9 @@ void InputController::ControlInput() {
         //Switch leg for single leg control
         if (ps2x.ButtonPressed(PSB_SELECT)) { // Select Button Test
           MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
-          if (g_InControlState.SelectedLeg < 5)
-            g_InControlState.SelectedLeg = g_InControlState.SelectedLeg + 1;
-          else
-            g_InControlState.SelectedLeg = 0;
+          g_InControlState.SelectedLeg = (g_InControlState.SelectedLeg + 1) % 6;
+          DBGSerial.print("Selected leg: ");
+          DBGSerial.println(g_InControlState.SelectedLeg);
         }
 
         g_InControlState.SLLeg.x = (ps2x.Analog(PSS_LX) - 128) / 2; //Left Stick Right/Left
@@ -311,6 +314,12 @@ void InputController::ControlInput() {
       //Calculate walking time delay
       g_InControlState.InputTimeDelay = 128 - max(max(abs(ps2x.Analog(PSS_LX) - 128), abs(ps2x.Analog(PSS_LY) - 128)),
                                                   abs(ps2x.Analog(PSS_RX) - 128));
+    }
+
+    if (PrevControlMode != ControlMode) {
+      DBGSerial.print("control mode: ");
+      DBGSerial.println(MODE_NAMES[ControlMode]);
+      PrevControlMode = ControlMode;
     }
 
     //Calculate g_InControlState.BodyPos.y

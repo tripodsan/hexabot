@@ -56,6 +56,7 @@
 //--------------------------------------------------------------------
 // [BotBoarduino]
 #define SOUND_PIN       5  // Botboarduino JR pin number
+#define GRIP_PIN       2  // Analog pin for gripper pressure sensor
 #define PS2_SEL         6  // On the PS2 receiver this pin may be called ATT (attention)
 #define PS2_CMD         7
 #define PS2_DAT         8
@@ -161,7 +162,7 @@
 //--------------------------------------------------------------------
 //[LEG DIMENSIONS]
 //Universal dimensions for each leg in mm
-#define cXXCoxaLength     80    // This is for CH3-R with Type 3 legs
+#define cXXCoxaLength     50    // This is for CH3-R with Type 3 legs
 #define cXXFemurLength    80
 #define cXXTibiaLength    120
 
@@ -214,33 +215,33 @@
 
 //--------------------------------------------------------------------
 //[START POSITIONS FEET]
-#define cHexInitXZ	 80
-#define CHexInitXZCos60  40        // COS(60) = .5
-#define CHexInitXZSin60  69    // sin(60) = .866
-#define CHexInitY	80 //30
+#define cHexInitXZ	     120
+#define CHexInitXZCos45   85  // COS(45) * XZ
+#define CHexInitXZSin45   85  // sin(45) * XZ
+#define CHexInitY	        80
 
 
-#define cRRInitPosX     CHexInitXZCos60      //Start positions of the Right Rear leg
+#define cRRInitPosX     CHexInitXZCos45      //Start positions of the Right Rear leg
 #define cRRInitPosY     CHexInitY
-#define cRRInitPosZ     CHexInitXZSin60
+#define cRRInitPosZ     CHexInitXZSin45
 
 #define cRMInitPosX     cHexInitXZ      //Start positions of the Right Middle leg
 #define cRMInitPosY     CHexInitY
 #define cRMInitPosZ     0
 
-#define cRFInitPosX     CHexInitXZCos60      //Start positions of the Right Front leg
+#define cRFInitPosX     CHexInitXZCos45      //Start positions of the Right Front leg
 #define cRFInitPosY     CHexInitY
-#define cRFInitPosZ     -CHexInitXZSin60
+#define cRFInitPosZ     -CHexInitXZSin45
 
-#define cLRInitPosX     CHexInitXZCos60      //Start positions of the Left Rear leg
+#define cLRInitPosX     CHexInitXZCos45      //Start positions of the Left Rear leg
 #define cLRInitPosY     CHexInitY
-#define cLRInitPosZ     CHexInitXZSin60
+#define cLRInitPosZ     CHexInitXZSin45
 
 #define cLMInitPosX     cHexInitXZ      //Start positions of the Left Middle leg
 #define cLMInitPosY     CHexInitY
 #define cLMInitPosZ     0
 
-#define cLFInitPosX     CHexInitXZCos60      //Start positions of the Left Front leg
+#define cLFInitPosX     CHexInitXZCos45      //Start positions of the Left Front leg
 #define cLFInitPosY     CHexInitY
-#define cLFInitPosZ     -CHexInitXZSin60
+#define cLFInitPosZ     -CHexInitXZSin45
 

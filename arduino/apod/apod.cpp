@@ -378,6 +378,10 @@ void apod_loop() {
 
   WriteOutputs();        // Write Outputs
 
+  // read the value from the sensor:
+  int gripValue = analogRead(GRIP_PIN);
+  DBGSerial.print("Grip: ");
+  DBGSerial.println(gripValue);
 
   //Single leg control
   SingleLegControl();
@@ -627,7 +631,7 @@ void UpdateMandibles() {
 void SingleLegControl() {
 
   //Check if all legs are down
-  AllDown = (LegPosY[cRF] == (short) pgm_read_word((__addr16) & cInitPosY[cRF])) &&
+  AllDown = (LegPosY[cRF] == (short) pgm_read_word(&cInitPosY[cRF])) &&
             (LegPosY[cRM] == (short) pgm_read_word(&cInitPosY[cRM])) &&
             (LegPosY[cRR] == (short) pgm_read_word(&cInitPosY[cRR])) &&
             (LegPosY[cLR] == (short) pgm_read_word(&cInitPosY[cLR])) &&
@@ -1258,7 +1262,7 @@ boolean TerminalMonitor() {
   int ch;
   // See if we need to output a prompt.
   if (g_fShowDebugPrompt) {
-    DBGSerial.println("Arduino Phoenix Monitor");
+    DBGSerial.println("A-Pod Terminal");
     DBGSerial.println("D - Toggle debug on or off");
 #ifdef OPT_FIND_SERVO_OFFSETS
     DBGSerial.println("O - Enter Servo offset mode");
