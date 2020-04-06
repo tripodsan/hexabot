@@ -62,8 +62,7 @@ typedef struct _InControlState {
   short TailAngleTilt;
 
   // Mandible control
-  short LeftMandibleAngle;
-  short RightMandibleAngle;
+  short MandibleAngle;
 
   //[Single Leg Control]
   byte SelectedLeg;

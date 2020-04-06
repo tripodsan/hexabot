@@ -40,15 +40,30 @@ extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
 //Init
 //--------------------------------------------------------------------
 void ServoDriver::Init() {
+  DBGSerial.println("---init server driver---");
+#ifdef __AVR__
+#if not defined(UBRR1H)
+#if cSSC_IN != 0
+  pinMode(cSSC_IN, INPUT);
+  pinMode(cSSC_OUT, OUTPUT);
+  SSCSerial.listen();
+#endif
+#endif
+#endif
+
   SSCSerial.begin(cSSC_BAUD);
   SSCSerial.listen();
-
   SSCSerial.print("ver\r");
-  int sChar;
-  while ((sChar = SSCSerial.read()) != -1) {
-    DBGSerial.write(sChar & 0xff);
+
+  char abVer[40];        // give a nice large buffer.
+  int cbRead = SSCRead((byte*)abVer, sizeof(abVer), 10000, 13);
+  DBGSerial.print("SSC Version: ");
+  if (cbRead > 0) {
+    DBGSerial.write((byte*)abVer, cbRead);
+  } else {
+    DBGSerial.print("n/a");
   }
-  DBGSerial.print("\n\r");
+  DBGSerial.println();
 }
 
 //------------------------------------------------------------------------------------------
@@ -128,15 +143,15 @@ void ServoDriver::OutputServoInfoHead(short pan, short tilt, short rot) {
   wRotSSCV = ((long) (-rot + 900)) * 1000 / cPwmDiv + cPFConst;
 
 #ifdef cSSC_BINARYMODE
-  SSCSerial.write(pgm_read_byte(&cCoxaPin[LegIndex])  + 0x80);
-    SSCSerial.write(wCoxaSSCV >> 8);
-    SSCSerial.write(wCoxaSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cFemurPin[LegIndex]) + 0x80);
-    SSCSerial.write(wFemurSSCV >> 8);
-    SSCSerial.write(wFemurSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cTibiaPin[LegIndex]) + 0x80);
-    SSCSerial.write(wTibiaSSCV >> 8);
-    SSCSerial.write(wTibiaSSCV & 0xff);
+  SSCSerial.write(cHeadPanPin  + 0x80);
+  SSCSerial.write(wPanSSCV >> 8);
+  SSCSerial.write(wPanSSCV & 0xff);
+  SSCSerial.write(cHeadTiltPin  + 0x80);
+  SSCSerial.write(wTiltSSCV >> 8);
+  SSCSerial.write(wTiltSSCV & 0xff);
+  SSCSerial.write(cHeadRotPin  + 0x80);
+  SSCSerial.write(wRotSSCV >> 8);
+  SSCSerial.write(wRotSSCV & 0xff);
 #else
   SSCSerial.print("#");
   SSCSerial.print(cHeadPanPin, DEC);
@@ -167,15 +182,12 @@ void ServoDriver::OutputServoInfoTail(short pan, short tilt) {
   wTiltSSCV = ((long) (-tilt + 900)) * 1000 / cPwmDiv + cPFConst;
 
 #ifdef cSSC_BINARYMODE
-  SSCSerial.write(pgm_read_byte(&cCoxaPin[LegIndex])  + 0x80);
-    SSCSerial.write(wCoxaSSCV >> 8);
-    SSCSerial.write(wCoxaSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cFemurPin[LegIndex]) + 0x80);
-    SSCSerial.write(wFemurSSCV >> 8);
-    SSCSerial.write(wFemurSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cTibiaPin[LegIndex]) + 0x80);
-    SSCSerial.write(wTibiaSSCV >> 8);
-    SSCSerial.write(wTibiaSSCV & 0xff);
+  SSCSerial.write(cTailPanPin  + 0x80);
+  SSCSerial.write(wPanSSCV >> 8);
+  SSCSerial.write(wPanSSCV & 0xff);
+  SSCSerial.write(cTailTiltPin  + 0x80);
+  SSCSerial.write(wTiltSSCV >> 8);
+  SSCSerial.write(wTiltSSCV & 0xff);
 #else
   SSCSerial.print("#");
   SSCSerial.print(cTailPanPin, DEC);
@@ -192,9 +204,15 @@ void ServoDriver::OutputServoInfoTail(short pan, short tilt) {
 //------------------------------------------------------------------------------------------
 //[OutputServoInfoForMandibles] Do the output to the SSC-32 for the mandible servos
 //------------------------------------------------------------------------------------------
+
+/**
+ * updates the mandibles
+ * @param left Left mandible angle in degrees. (1 decimal)
+ * @param right Right mandible angle in degrees. (1 decimal)
+ */
 void ServoDriver::OutputServoInfoMandibles(short left, short right) {
-  word wLeftSSCV;        // Pan value in SSC units
-  word wRightSSCV;      //
+  uint16_t wLeftSSCV;
+  uint16_t wRightSSCV;
 
   //Update Right Legs
   g_InputController.AllowControllerInterrupts(false);    // If on xbee on hserial tell hserial to not processess...
@@ -202,15 +220,17 @@ void ServoDriver::OutputServoInfoMandibles(short left, short right) {
   wRightSSCV = ((long) (-right + 900)) * 1000 / cPwmDiv + cPFConst;
 
 #ifdef cSSC_BINARYMODE
-  SSCSerial.write(pgm_read_byte(&cCoxaPin[LegIndex])  + 0x80);
-    SSCSerial.write(wCoxaSSCV >> 8);
-    SSCSerial.write(wCoxaSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cFemurPin[LegIndex]) + 0x80);
-    SSCSerial.write(wFemurSSCV >> 8);
-    SSCSerial.write(wFemurSSCV & 0xff);
-    SSCSerial.write(pgm_read_byte(&cTibiaPin[LegIndex]) + 0x80);
-    SSCSerial.write(wTibiaSSCV >> 8);
-    SSCSerial.write(wTibiaSSCV & 0xff);
+  SSCSerial.write(cLMandPin  + 0x80);
+  SSCSerial.write(wLeftSSCV >> 8);
+  SSCSerial.write(wLeftSSCV & 0xff);
+  SSCSerial.write(cRMandPin + 0x80);
+  SSCSerial.write(wRightSSCV >> 8);
+  SSCSerial.write(wRightSSCV & 0xff);
+  byte abOut[3];
+  abOut[0] = 0xA1;
+  abOut[1] = wMandibleTime >> 8;
+  abOut[2] = wMandibleTime & 0xff;
+  SSCSerial.write(abOut, 3);
 #else
   SSCSerial.print("#");
   SSCSerial.print(cLMandPin, DEC);
@@ -220,6 +240,8 @@ void ServoDriver::OutputServoInfoMandibles(short left, short right) {
   SSCSerial.print(cRMandPin, DEC);
   SSCSerial.print("P");
   SSCSerial.print(wRightSSCV, DEC);
+  SSCSerial.print("T");
+  SSCSerial.print(wMandibleTime, DEC);
 #endif
   g_InputController.AllowControllerInterrupts(true);    // Ok for hserial again...
 }
@@ -380,7 +402,14 @@ void ServoDriver::FindServoOffsets() {
     SSCSerial.print(abSSCServoNum[sSN], DEC);
     SSCSerial.println("P1500");
   }
-
+  for (sSN = 0; sSN < 6 * NUMSERVOSPERLEG; sSN++) {
+    Serial.print("Servo: ");
+    Serial.print(apszLegs[sSN / NUMSERVOSPERLEG]);
+    Serial.print(apszLJoints[sSN % NUMSERVOSPERLEG]);
+    Serial.print("(");
+    Serial.print(asOffsetsRead[sSN] + asOffsets[sSN], DEC);
+    Serial.println(")");
+  }
   // OK lets move all of the servos to their zero point.
   Serial.println("Find Servo Zeros.\n$-Exit, +- changes, *-change servo");
   Serial.println("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia");

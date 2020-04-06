@@ -118,8 +118,7 @@ short TailAnglePan;
 short TailAngleTilt;
 
 // actual mandible angles
-short LeftMandibleAngle;
-short RightMandibleAngle;
+short MandibleAngle;
 
 //--------------------------------------------------------------------
 //[POSITIONS SINGLE LEG CONTROL]
@@ -337,13 +336,11 @@ void apod_setup() {
   g_InControlState.HeadAnglePan = 0;
   g_InControlState.HeadAngleTilt = 0;
   g_InControlState.HeadAngleRot = 0;
-  g_InControlState.LeftMandibleAngle = 0;
-  g_InControlState.RightMandibleAngle = 0;
+  g_InControlState.MandibleAngle = 0;
   HeadAnglePan = 0;
   HeadAngleTilt = 0;
   HeadAngleRot = 0;
-  LeftMandibleAngle = 0;
-  RightMandibleAngle = 0;
+  MandibleAngle = 0;
 
   // Tail
   g_InControlState.TailAnglePan = 0;
@@ -556,7 +553,7 @@ void StartUpdateServos() {
   }
   g_ServoDriver.OutputServoInfoHead(HeadAnglePan, HeadAngleTilt, HeadAngleRot);
   g_ServoDriver.OutputServoInfoTail(TailAnglePan, TailAngleTilt);
-  g_ServoDriver.OutputServoInfoMandibles(LeftMandibleAngle, RightMandibleAngle);
+  g_ServoDriver.OutputServoInfoMandibles(-MandibleAngle, MandibleAngle);
 }
 
 
@@ -622,8 +619,7 @@ bool CheckVoltage() {
 
 void UpdateMandibles() {
   // todo: check speed and pressure sensor
-  LeftMandibleAngle = g_InControlState.LeftMandibleAngle;
-  RightMandibleAngle = g_InControlState.RightMandibleAngle;
+  MandibleAngle = g_InControlState.MandibleAngle;
 }
 
 //--------------------------------------------------------------------

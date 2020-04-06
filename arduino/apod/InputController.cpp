@@ -13,62 +13,6 @@
 //
 // NEW IN V1.0
 // - First Release
-//
-// Walk method 1:
-// - Left StickWalk/Strafe
-// - Right StickRotate
-//
-// Walk method 2:
-// - Left StickDisable
-// - Right StickWalk/Rotate
-//
-//
-// PS2 CONTROLS:
-// [Common Controls]
-// - StartTurn on/off the bot
-// - L1Toggle Shift mode
-// - L2Toggle Rotate mode
-// - CircleToggle Single leg mode
-//    - Square        Toggle Balance mode
-// - TriangleMove body to 35 mm from the ground (walk pos)
-// and back to the ground
-// - D-Pad upBody up 10 mm
-// - D-Pad downBody down 10 mm
-// - D-Pad leftdecrease speed with 50mS
-// - D-Pad rightincrease speed with 50mS
-//
-// [Walk Controls]
-// - selectSwitch gaits
-// - Left Stick(Walk mode 1) Walk/Strafe
-//  (Walk mode 2) Disable
-// - Right Stick(Walk mode 1) Rotate,
-// (Walk mode 2) Walk/Rotate
-// - R1Toggle Double gait travel speed
-// - R2Toggle Double gait travel length
-//
-// [Shift Controls]
-// - Left StickShift body X/Z
-// - Right StickShift body Y and rotate body Y
-//
-// [Rotate Controls]
-// - Left StickRotate body X/Z
-// - Right StickRotate body Y
-//
-// [Single leg Controls]
-// - selectSwitch legs
-// - Left StickMove Leg X/Z (relative)
-// - Right StickMove Leg Y (absolute)
-// - R2Hold/release leg position
-//
-// [GP Player Controls]
-// - selectSwitch Sequences
-// - R2Start Sequence
-//
-//  [Gripper]
-//  - L1 Open Mandibles
-//  - L2 Close Mandibles
-//  - L2 + D-Pad left Decrease gripper torque
-//  - L2 + D-Pad right Increase gripper torque
 
 //====================================================================
 // [Include files]
@@ -147,6 +91,12 @@ void InputController::AllowControllerInterrupts(boolean fAllow) {
 // We don't need to do anything...
 }
 
+void openMandibles(short angle1) {
+  g_InControlState.MandibleAngle = min(max(g_InControlState.MandibleAngle + angle1, cMandibleMin1), cMandibleMax1);
+  DBGSerial.print("mandibles: ");
+  DBGSerial.println(g_InControlState.MandibleAngle);
+}
+
 //==============================================================================
 // This is The main code to input function to read inputs from the PS2 and then
 //process any commands.
@@ -171,18 +121,12 @@ void InputController::ControlInput() {
     }
 
     if (g_InControlState.fHexOn) {
-      // open mandibles
-      if (ps2x.ButtonPressed(PSB_L1)) {
-        g_InControlState.LeftMandibleAngle += 10;
-        g_InControlState.RightMandibleAngle += 10;
-        MSound(SOUND_PIN, 1, 50, 500);
-      }
 
-      // close mandibles
-      if (ps2x.ButtonPressed(PSB_L2)) {
-        g_InControlState.LeftMandibleAngle -= 10;
-        g_InControlState.RightMandibleAngle -= 10;
-        MSound(SOUND_PIN, 1, 30, 500);
+      if (ps2x.Button(PSB_L1)) {
+        openMandibles(wMandibleInc);
+      }
+      if (ps2x.Button(PSB_L2)) {
+        openMandibles(-wMandibleInc);
       }
 
       // [SWITCH MODES]
@@ -396,8 +340,7 @@ void PS2TurnRobotOff() {
   g_InControlState.TravelLength.x = 0;
   g_InControlState.TravelLength.z = 0;
   g_InControlState.TravelLength.y = 0;
-  g_InControlState.LeftMandibleAngle = 0;
-  g_InControlState.RightMandibleAngle = 0;
+  g_InControlState.MandibleAngle = 0;
   g_InControlState.HeadAnglePan = 0;
   g_InControlState.HeadAngleTilt = 0;
   g_InControlState.HeadAngleRot = 0;
