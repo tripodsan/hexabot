@@ -43,9 +43,6 @@
 
 #define USEPS2
 
-#define USE_SSC32
-#define	cSSC_BINARYMODE	1			// Define if your SSC-32 card supports binary mode.
-
 //[SERIAL CONNECTIONS]
 
 // Warning I will undefine some components as the non-megas don't have enough memory...

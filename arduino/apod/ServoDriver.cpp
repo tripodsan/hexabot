@@ -1,6 +1,4 @@
 //====================================================================
-//Project Lynxmotion Phoenix
-//
 // Servo Driver - This version is setup to use the SSC-32 to control
 // the servos.
 //====================================================================
@@ -9,8 +7,6 @@
 #include "ServoDriver.h"
 
 #define NUMSERVOSPERLEG 3
-
-#ifdef USE_SSC32
 
 //Servo Pin numbers - May be SSC-32 or actual pins on main controller, depending on configuration.
 const byte cCoxaPin[] PROGMEM = {cRRCoxaPin, cRMCoxaPin, cRFCoxaPin, cLRCoxaPin, cLMCoxaPin, cLFCoxaPin};
@@ -34,7 +30,6 @@ SoftwareSerial SSCSerial(cSSC_IN, cSSC_OUT);
 
 // definition of some helper functions
 extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
-
 
 //--------------------------------------------------------------------
 //Init
@@ -83,7 +78,6 @@ void ServoDriver::BeginServoUpdate()    // Start the update
 // For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900.
 
 void ServoDriver::OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1)
-#endif
 {
   word wCoxaSSCV;        // Coxa value in SSC units
   word wFemurSSCV;        //
@@ -101,7 +95,6 @@ void ServoDriver::OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short 
     wTibiaSSCV = ((long) (sTibiaAngle1 + 900)) * 1000 / cPwmDiv + cPFConst;
   }
 
-#ifdef cSSC_BINARYMODE
   SSCSerial.write(pgm_read_byte(&cCoxaPin[LegIndex])  + 0x80);
   SSCSerial.write(wCoxaSSCV >> 8);
   SSCSerial.write(wCoxaSSCV & 0xff);
@@ -111,20 +104,6 @@ void ServoDriver::OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short 
   SSCSerial.write(pgm_read_byte(&cTibiaPin[LegIndex]) + 0x80);
   SSCSerial.write(wTibiaSSCV >> 8);
   SSCSerial.write(wTibiaSSCV & 0xff);
-#else
-  SSCSerial.print("#");
-  SSCSerial.print(pgm_read_byte(&cCoxaPin[LegIndex]), DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wCoxaSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(pgm_read_byte(&cFemurPin[LegIndex]), DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wFemurSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(pgm_read_byte(&cTibiaPin[LegIndex]), DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wTibiaSSCV, DEC);
-#endif
   g_InputController.AllowControllerInterrupts(true);    // Ok for hserial again...
 }
 
@@ -142,7 +121,6 @@ void ServoDriver::OutputServoInfoHead(short pan, short tilt, short rot) {
   wTiltSSCV = ((long) (-tilt + 900)) * 1000 / cPwmDiv + cPFConst;
   wRotSSCV = ((long) (-rot + 900)) * 1000 / cPwmDiv + cPFConst;
 
-#ifdef cSSC_BINARYMODE
   SSCSerial.write(cHeadPanPin  + 0x80);
   SSCSerial.write(wPanSSCV >> 8);
   SSCSerial.write(wPanSSCV & 0xff);
@@ -152,20 +130,6 @@ void ServoDriver::OutputServoInfoHead(short pan, short tilt, short rot) {
   SSCSerial.write(cHeadRotPin  + 0x80);
   SSCSerial.write(wRotSSCV >> 8);
   SSCSerial.write(wRotSSCV & 0xff);
-#else
-  SSCSerial.print("#");
-  SSCSerial.print(cHeadPanPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wPanSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(cHeadTiltPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wTiltSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(cHeadRotPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wRotSSCV, DEC);
-#endif
   g_InputController.AllowControllerInterrupts(true);    // Ok for hserial again...
 }
 
@@ -181,23 +145,13 @@ void ServoDriver::OutputServoInfoTail(short pan, short tilt) {
   wPanSSCV = ((long) (-pan + 900)) * 1000 / cPwmDiv + cPFConst;
   wTiltSSCV = ((long) (-tilt + 900)) * 1000 / cPwmDiv + cPFConst;
 
-#ifdef cSSC_BINARYMODE
   SSCSerial.write(cTailPanPin  + 0x80);
   SSCSerial.write(wPanSSCV >> 8);
   SSCSerial.write(wPanSSCV & 0xff);
   SSCSerial.write(cTailTiltPin  + 0x80);
   SSCSerial.write(wTiltSSCV >> 8);
   SSCSerial.write(wTiltSSCV & 0xff);
-#else
-  SSCSerial.print("#");
-  SSCSerial.print(cTailPanPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wPanSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(cTailTiltPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wTiltSSCV, DEC);
-#endif
+
   g_InputController.AllowControllerInterrupts(true);    // Ok for hserial again...
 }
 
@@ -219,7 +173,6 @@ void ServoDriver::OutputServoInfoMandibles(short left, short right) {
   wLeftSSCV = ((long) (-left + 900)) * 1000 / cPwmDiv + cPFConst;
   wRightSSCV = ((long) (-right + 900)) * 1000 / cPwmDiv + cPFConst;
 
-#ifdef cSSC_BINARYMODE
   SSCSerial.write(cLMandPin  + 0x80);
   SSCSerial.write(wLeftSSCV >> 8);
   SSCSerial.write(wLeftSSCV & 0xff);
@@ -231,18 +184,7 @@ void ServoDriver::OutputServoInfoMandibles(short left, short right) {
   abOut[1] = wMandibleTime >> 8;
   abOut[2] = wMandibleTime & 0xff;
   SSCSerial.write(abOut, 3);
-#else
-  SSCSerial.print("#");
-  SSCSerial.print(cLMandPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wLeftSSCV, DEC);
-  SSCSerial.print("#");
-  SSCSerial.print(cRMandPin, DEC);
-  SSCSerial.print("P");
-  SSCSerial.print(wRightSSCV, DEC);
-  SSCSerial.print("T");
-  SSCSerial.print(wMandibleTime, DEC);
-#endif
+
   g_InputController.AllowControllerInterrupts(true);    // Ok for hserial again...
 }
 
@@ -254,22 +196,13 @@ void ServoDriver::OutputServoInfoMandibles(short left, short right) {
 //        get the next command to start
 //--------------------------------------------------------------------
 void ServoDriver::CommitServoDriver(word wMoveTime) {
-#ifdef cSSC_BINARYMODE
-  byte    abOut[3];
-#endif
-
   g_InputController.AllowControllerInterrupts(false);    // If on xbee on hserial tell hserial to not processess...
 
-#ifdef cSSC_BINARYMODE
+  byte    abOut[3];
   abOut[0] = 0xA1;
   abOut[1] = wMoveTime >> 8;
   abOut[2] = wMoveTime & 0xff;
   SSCSerial.write(abOut, 3);
-#else
-  //Send <CR>
-  SSCSerial.print("T");
-  SSCSerial.println(wMoveTime, DEC);
-#endif
 
   g_InputController.AllowControllerInterrupts(true);
 
