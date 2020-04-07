@@ -43,7 +43,6 @@ PS2X ps2x; // create PS2 Controller Class
 // Define an instance of the Input Controller...
 InputController g_InputController;       // Our Input controller
 
-
 static short g_BodyYOffset;
 static short g_sPS2ErrorCnt;
 static short g_BodyYShift;
@@ -52,10 +51,6 @@ static byte PrevControlMode;
 static bool DoubleHeightOn;
 static bool DoubleTravelOn;
 static bool WalkMethod;
-byte GPSeq;             //Number of the sequence
-
-// some external or forward function references.
-extern void MSound(uint8_t _pin, byte cNotes, ...);
 
 extern void PS2TurnRobotOff();
 
@@ -84,15 +79,6 @@ void InputController::Init() {
   WalkMethod = false;
 
   g_InControlState.SpeedControl = 100;    // Sort of migrate stuff in from Devon.
-}
-
-//==============================================================================
-// This function is called by the main code to tell us when it is about to
-// do a lot of bit-bang outputs and it would like us to minimize any interrupts
-// that we do while it is active...
-//==============================================================================
-void InputController::AllowControllerInterrupts(boolean fAllow) {
-// We don't need to do anything...
 }
 
 void openMandibles(short angle1) {
@@ -358,7 +344,7 @@ void PS2TurnRobotOff() {
   g_BodyYOffset = 0;
   g_BodyYShift = 0;
   g_InControlState.SelectedLeg = 255;
-  g_InControlState.fHexOn = 0;
+  g_InControlState.fHexOn = false;
 }
 
 

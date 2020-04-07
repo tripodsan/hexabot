@@ -8,7 +8,7 @@ set(ARDUINO_CPU atmega328)
 project(${PROJECT_NAME})
 
 # Define additional source and header files or default arduino sketch files
-set(${PROJECT_NAME}_SRCS apod.cpp ServoDriver.cpp InputController.cpp)
+set(${PROJECT_NAME}_SRCS apod.cpp ServoDriver.cpp ServoOffsets.cpp InputController.cpp)
 #set(${PROJECT_NAME}_HDRS )
 
 ### Additional static libraries to include in the target.

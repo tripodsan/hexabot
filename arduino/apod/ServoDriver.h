@@ -12,11 +12,21 @@
 #include "config.h"  // make sure we know what options are enabled...
 #include <Arduino.h>
 
+#define NUMSERVOSPERLEG uint8_t(3)
+#define NUMSERVOSHEAD 5
+#define NUMSERVOSTAIL 2
+#define NUMSERVOS uint8_t(NUMSERVOSPERLEG * 6 + NUMSERVOSHEAD + NUMSERVOSTAIL)
+
+//Servo Pin numbers - May be SSC-32 or actual pins on main controller, depending on configuration.
+static const byte cCoxaPin[] PROGMEM = {cRRCoxaPin, cRMCoxaPin, cRFCoxaPin, cLRCoxaPin, cLMCoxaPin, cLFCoxaPin};
+static const byte cFemurPin[] PROGMEM = {cRRFemurPin, cRMFemurPin, cRFFemurPin, cLRFemurPin, cLMFemurPin, cLFFemurPin};
+static const byte cTibiaPin[] PROGMEM = {cRRTibiaPin, cRMTibiaPin, cRFTibiaPin, cLRTibiaPin, cLMTibiaPin, cLFTibiaPin};
+
+extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
+
 class ServoDriver {
 public:
   void Init();
-
-  void BeginServoUpdate();
 
   void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1);
 

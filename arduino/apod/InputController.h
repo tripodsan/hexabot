@@ -20,9 +20,6 @@ public:
 
   void ControlInput();
 
-  void AllowControllerInterrupts(boolean fAllow);
-
-private:
 };
 
 typedef struct _Coord3D {

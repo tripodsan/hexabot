@@ -1,12 +1,4 @@
 #include <Arduino.h>
-
-#if ARDUINO > 99
-
-#include <Arduino.h>
-
-#else
-#endif
-
 #include <PS2X_lib.h>
 #include <pins_arduino.h>
 #include <SoftwareSerial.h>
@@ -136,7 +128,7 @@ short LegPosZ[6];    //Actual Z Posion of the Leg
 boolean LedA;    //Red
 boolean LedB;    //Green
 boolean LedC;    //Orange
-boolean Eyes;    //Eyes output
+
 //--------------------------------------------------------------------
 //[VARIABLES]
 byte Index;                    //Index universal used
@@ -247,8 +239,6 @@ boolean fContinueWalking;    // should we continue to walk?
 //=============================================================================
 extern void GaitSelect();
 
-extern void WriteOutputs();
-
 extern void SingleLegControl();
 
 extern void GaitSeq();
@@ -258,8 +248,6 @@ extern void BalanceBody();
 extern void CheckAngles();
 
 extern void UpdateMandibles();
-
-extern void PrintSystemStuff();            // Try to see why we fault...
 
 extern void BalCalcOneLeg(short PosX, short PosZ, short PosY, byte BalLegNr);
 
@@ -271,9 +259,19 @@ extern void Gait(byte GaitCurrentLegNr);
 
 extern short GetATan2(short AtanX, short AtanY);
 
-void StartUpdateServos();
+void UpdateLegServos();
+
+void UpdateNonLegServos();
 
 bool TerminalMonitor();
+
+void IdleLoop();
+
+void ActiveLoop();
+
+void PowerUp();
+
+void PowerDown();
 
 //--------------------------------------------------------------------------
 // SETUP: the main arduino setup function.
@@ -303,10 +301,9 @@ void apod_setup() {
   delay(10);
 
   //Turning off all the leds
-  LedA = 0;
-  LedB = 0;
-  LedC = 0;
-  Eyes = 0;
+  LedA = false;
+  LedB = false;
+  LedC = false;
 
   //Tars Init Positions
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
@@ -373,16 +370,61 @@ void apod_loop() {
   lTimerStart = millis();
   //Read input
   CheckVoltage();        // check our voltages...
-  if (!g_fLowVoltageShutdown)
+
+  if (!g_fLowVoltageShutdown) {
     g_InputController.ControlInput();
+  }
 
-  WriteOutputs();        // Write Outputs
+  if (g_InControlState.fHexOn) {
+    if (!g_InControlState.fPrev_HexOn) {
+      PowerUp();
+    }
+    ActiveLoop();
+  } else {
+    if (g_InControlState.fPrev_HexOn) {
+      PowerDown();
+    }
+    IdleLoop();
+  }
+  g_InControlState.fPrev_HexOn = g_InControlState.fHexOn;
+}
 
-  // read the value from the sensor:
-  int gripValue = analogRead(GRIP_PIN);
-  DBGSerial.print("Grip: ");
-  DBGSerial.println(gripValue);
+void PowerUp() {
+  MSound(SOUND_PIN, 3, 60, 2000, 80, 2250, 100, 2500);
+  DBGSerial.println("Ready for action!");
+}
 
+void PowerDown() {
+  MSound(SOUND_PIN, 3, 100, 2500, 80, 2250, 60, 2000);
+  DBGSerial.println("Goodbye.");
+
+  // last update...
+  ServoMoveTime = 600;
+  UpdateLegServos();
+  g_ServoDriver.CommitServoDriver(ServoMoveTime);
+  UpdateNonLegServos();
+
+  // and turn servos off.
+  delay(600);
+  g_ServoDriver.FreeServos();
+}
+
+/**
+ * Loop when bot is not powered on
+ */
+void IdleLoop() {
+#ifdef OPT_TERMINAL_MONITOR
+  if (TerminalMonitor()) {
+    return;
+  }
+#endif
+  delay(20);  // give a pause between times we call if nothing is happening
+}
+
+/**
+ * Loop when bot is on
+ */
+void ActiveLoop() {
   //Single leg control
   SingleLegControl();
 
@@ -391,6 +433,7 @@ void apod_loop() {
 
   // Mandibles
   UpdateMandibles();
+  UpdateNonLegServos();
 
   //Balance calculations
   TotalTransX = 0;     //reset values used for calculation of balance
@@ -417,9 +460,9 @@ void apod_loop() {
 
 
   //Reset IKsolution indicators
-  IKSolution = 0;
-  IKSolutionWarning = 0;
-  IKSolutionError = 0;
+  IKSolution = false;
+  IKSolutionWarning = false;
+  IKSolutionError = false;
 
   //Do IK for all Right legs
   for (LegIndex = 0; LegIndex <= 2; LegIndex++) {
@@ -451,124 +494,74 @@ void apod_loop() {
   LedC = IKSolutionWarning;
   LedA = IKSolutionError;
 
-  //Drive Servos
-  if (g_InControlState.fHexOn) {
-    if (g_InControlState.fHexOn && !g_InControlState.fPrev_HexOn) {
-      MSound(SOUND_PIN, 3, 60, 2000, 80, 2250, 100, 2500);
-#ifdef USEXBEE
-      XBeePlaySounds(3, 60, 2000, 80, 2250, 100, 2500);
-#endif
+  //Calculate Servo Move time
+  if ((abs(g_InControlState.TravelLength.x) > cTravelDeadZone) ||
+      (abs(g_InControlState.TravelLength.z) > cTravelDeadZone) ||
+      (abs(g_InControlState.TravelLength.y * 2) > cTravelDeadZone)) {
+    ServoMoveTime = NomGaitSpeed + (g_InControlState.InputTimeDelay * 2) + g_InControlState.SpeedControl;
 
-      Eyes = 1;
+    //Add additional delay when Balance mode is on
+    if (g_InControlState.BalanceMode) {
+      ServoMoveTime = ServoMoveTime + 100;
     }
-
-    //Calculate Servo Move time
-    if ((abs(g_InControlState.TravelLength.x) > cTravelDeadZone) ||
-        (abs(g_InControlState.TravelLength.z) > cTravelDeadZone) ||
-        (abs(g_InControlState.TravelLength.y * 2) > cTravelDeadZone)) {
-      ServoMoveTime = NomGaitSpeed + (g_InControlState.InputTimeDelay * 2) + g_InControlState.SpeedControl;
-
-      //Add additional delay when Balance mode is on
-      if (g_InControlState.BalanceMode)
-        ServoMoveTime = ServoMoveTime + 100;
-    } else //Movement speed excl. Walking
-      ServoMoveTime = 200 + g_InControlState.SpeedControl;
-
-    // note we broke up the servo driver into start/commit that way we can output all of the servo information
-    // before we wait and only have the termination information to output after the wait.  That way we hopefully
-    // be more accurate with our timings...
-    StartUpdateServos();
-
-    // See if we need to sync our processor with the servo driver while walking to ensure the prev is completed before sending the next one
-
-    fContinueWalking = false;
-
-    // Finding any incident of GaitPos/Rot <>0:
-    for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
-      if ((GaitPosX[LegIndex] > 2) || (GaitPosX[LegIndex] < -2)
-          || (GaitPosY[LegIndex] > 2) || (GaitPosY[LegIndex] < -2)
-          || (GaitPosZ[LegIndex] > 2) || (GaitPosZ[LegIndex] < -2)
-          || (GaitRotY[LegIndex] > 2) || (GaitRotY[LegIndex] < -2)) {
-        fContinueWalking = true;
-        break;
-      }
-    }
-    if (fWalking || fContinueWalking) {
-      word wDelayTime;
-      fWalking = fContinueWalking;
-
-      //Get endtime and calculate wait time
-      lTimerEnd = millis();
-      if (lTimerEnd > lTimerStart)
-        CycleTime = lTimerEnd - lTimerStart;
-      else
-        CycleTime = 0xffffffffL - lTimerEnd + lTimerStart + 1;
-
-      // if it is less, use the last cycle time...
-      //Wait for previous commands to be completed while walking
-      wDelayTime = (min(max((PrevServoMoveTime - CycleTime), 1), NomGaitSpeed));
-      delay(wDelayTime);
-    }
-
   } else {
-    //Turn the bot off
-    if (g_InControlState.fPrev_HexOn || (AllDown = 0)) {
-      ServoMoveTime = 600;
-      StartUpdateServos();
-      g_ServoDriver.CommitServoDriver(ServoMoveTime);
-      MSound(SOUND_PIN, 3, 100, 2500, 80, 2250, 60, 2000);
-#ifdef USEXBEE
-      XBeePlaySounds(3, 100, 2500, 80, 2250, 60, 2000);
-#endif
-      delay(600);
-    } else {
-      g_ServoDriver.FreeServos();
-      Eyes = 0;
-    }
-    // We also have a simple debug monitor that allows us to
-    // check things. call it here..
-#ifdef OPT_TERMINAL_MONITOR
-    if (TerminalMonitor())
-      return;
-#endif
-    delay(20);  // give a pause between times we call if nothing is happening
+    //Movement speed excl. Walking
+    ServoMoveTime = 200 + g_InControlState.SpeedControl;
   }
 
-  // Xan said Needed to be here...
+  // note we broke up the servo driver into start/commit that way we can output all of the servo information
+  // before we wait and only have the termination information to output after the wait.  That way we hopefully
+  // be more accurate with our timings...
+  UpdateLegServos();
+
+  // See if we need to sync our processor with the servo driver while walking to ensure the prev is completed before sending the next one
+
+  fContinueWalking = false;
+
+  // Finding any incident of GaitPos/Rot <>0:
+  for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
+    if ((GaitPosX[LegIndex] > 2) || (GaitPosX[LegIndex] < -2)
+        || (GaitPosY[LegIndex] > 2) || (GaitPosY[LegIndex] < -2)
+        || (GaitPosZ[LegIndex] > 2) || (GaitPosZ[LegIndex] < -2)
+        || (GaitRotY[LegIndex] > 2) || (GaitRotY[LegIndex] < -2)) {
+      fContinueWalking = true;
+      break;
+    }
+  }
+  if (fWalking || fContinueWalking) {
+    word wDelayTime;
+    fWalking = fContinueWalking;
+
+    //Get endtime and calculate wait time
+    lTimerEnd = millis();
+    if (lTimerEnd > lTimerStart)
+      CycleTime = lTimerEnd - lTimerStart;
+    else
+      CycleTime = 0xffffffffL - lTimerEnd + lTimerStart + 1;
+
+    // if it is less, use the last cycle time...
+    //Wait for previous commands to be completed while walking
+    wDelayTime = (min(max((PrevServoMoveTime - CycleTime), 1), NomGaitSpeed));
+    delay(wDelayTime);
+  }
+
   g_ServoDriver.CommitServoDriver(ServoMoveTime);
   PrevServoMoveTime = ServoMoveTime;
-
-  //Store previous g_InControlState.fHexOn State
-  if (g_InControlState.fHexOn)
-    g_InControlState.fPrev_HexOn = 1;
-  else
-    g_InControlState.fPrev_HexOn = 0;
 }
 
 
-void StartUpdateServos() {
-  byte LegIndex;
-
-  // First call off to the init...
-  g_ServoDriver.BeginServoUpdate();    // Start the update
-
-  for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
+void UpdateLegServos() {
+  for (byte LegIndex = 0; LegIndex <= 5; LegIndex++) {
     g_ServoDriver.OutputServoInfoForLeg(LegIndex, CoxaAngle1[LegIndex], FemurAngle1[LegIndex], TibiaAngle1[LegIndex]);
   }
+}
+
+void UpdateNonLegServos() {
   g_ServoDriver.OutputServoInfoHead(HeadAnglePan, HeadAngleTilt, HeadAngleRot);
   g_ServoDriver.OutputServoInfoTail(TailAnglePan, TailAngleTilt);
   g_ServoDriver.OutputServoInfoMandibles(-MandibleAngle, MandibleAngle);
 }
 
-
-//--------------------------------------------------------------------
-//[WriteOutputs] Updates the state of the leds
-//--------------------------------------------------------------------
-void WriteOutputs() {
-#ifdef cEyesPin
-  digitalWrite(cEyesPin, Eyes);
-#endif
-}
 
 //--------------------------------------------------------------------
 //[CHECK VOLTAGE]
@@ -622,8 +615,27 @@ bool CheckVoltage() {
 }
 
 void UpdateMandibles() {
-  // todo: check speed and pressure sensor
-  MandibleAngle = g_InControlState.MandibleAngle;
+  short inc = 0;
+  int da = g_InControlState.MandibleAngle - MandibleAngle;
+  if (da > 0) {
+    inc = min(wMandibleInc, da);
+  } else {
+    inc = max(-wMandibleInc, da);
+#ifdef HAS_GRIP_SENSOR
+    // read the value from the sensor:
+    int gripValue = analogRead(GRIP_PIN);
+    if (gripValue > 50) {
+      DBGSerial.print("Grip: ");
+      DBGSerial.println(gripValue);
+      inc = 0;
+      if (gripValue > 400) {
+        // loosen a bit
+        inc = 5;
+      }
+    }
+#endif
+  }
+  MandibleAngle = min(max(MandibleAngle + inc, cMandibleMin1), cMandibleMax1);
 }
 
 //--------------------------------------------------------------------
@@ -909,10 +921,10 @@ void BalanceBody() {
   else
     TotalYBal1 += 1800;
 
-  if (TotalZBal1 < -1800)    //Compensate for extreme balance positions that causes owerflow
+  if (TotalZBal1 < -1800)    //Compensate for extreme balance positions that causes overflow
     TotalZBal1 += 3600;
 
-  if (TotalXBal1 < -1800)    //Compensate for extreme balance positions that causes owerflow
+  if (TotalXBal1 < -1800)    //Compensate for extreme balance positions that causes overflow
     TotalXBal1 += 3600;
 
   //Balance rotation
@@ -943,19 +955,19 @@ void GetSinCos(short AngleDeg1) {
 
   if (AngleDeg1 >= 0 && AngleDeg1 <= 900)     // 0 to 90 deg
   {
-    sin4 = pgm_read_word(&GetSin[AngleDeg1 / 5]);             // 5 is the presision (0.5) of the table
+    sin4 = pgm_read_word(&GetSin[AngleDeg1 / 5]);             // 5 is the precision (0.5) of the table
     cos4 = pgm_read_word(&GetSin[(900 - (AngleDeg1)) / 5]);
   } else if (AngleDeg1 > 900 && AngleDeg1 <= 1800)     // 90 to 180 deg
   {
-    sin4 = pgm_read_word(&GetSin[(900 - (AngleDeg1 - 900)) / 5]); // 5 is the presision (0.5) of the table
+    sin4 = pgm_read_word(&GetSin[(900 - (AngleDeg1 - 900)) / 5]); // 5 is the precision (0.5) of the table
     cos4 = -pgm_read_word(&GetSin[(AngleDeg1 - 900) / 5]);
   } else if (AngleDeg1 > 1800 && AngleDeg1 <= 2700) // 180 to 270 deg
   {
-    sin4 = -pgm_read_word(&GetSin[(AngleDeg1 - 1800) / 5]);     // 5 is the presision (0.5) of the table
+    sin4 = -pgm_read_word(&GetSin[(AngleDeg1 - 1800) / 5]);     // 5 is the precision (0.5) of the table
     cos4 = -pgm_read_word(&GetSin[(2700 - AngleDeg1) / 5]);
   } else if (AngleDeg1 > 2700 && AngleDeg1 <= 3600) // 270 to 360 deg
   {
-    sin4 = -pgm_read_word(&GetSin[(3600 - AngleDeg1) / 5]); // 5 is the presision (0.5) of the table
+    sin4 = -pgm_read_word(&GetSin[(3600 - AngleDeg1) / 5]); // 5 is the precision (0.5) of the table
     cos4 = pgm_read_word(&GetSin[(AngleDeg1 - 2700) / 5]);
   }
 }
@@ -1187,16 +1199,6 @@ void CheckAngles() {
 }
 
 
-
-//--------------------------------------------------------------------
-// Why are we faulting?
-//--------------------------------------------------------------------
-
-
-void PrintSystemStuff()            // Try to see why we fault...
-{
-
-}
 
 // BUGBUG:: Move to some library...
 //==============================================================================

@@ -50,6 +50,8 @@
 
 #define cSSC_BAUD   115200   //SSC32 BAUD rate
 
+#define HAS_GRIP_SENSOR
+
 //--------------------------------------------------------------------
 // [BotBoarduino]
 #define SOUND_PIN       5  // Botboarduino JR pin number
@@ -140,10 +142,10 @@
 #define cLFTibiaMin1    -530
 #define cLFTibiaMax1    900
 
-#define cMandibleMin1   -100
+#define cMandibleMin1   -200
 #define cMandibleMax1    900
 #define wMandibleInc      40  // mandible increment
-#define wMandibleTime     50  // mandible update time
+#define wMandibleTime     10  // mandible update time
 #define cHeadPanMin1    -500
 #define cHeadPanMax1     500
 #define cHeadTiltMin1   -500
