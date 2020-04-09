@@ -250,8 +250,8 @@ byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bo
   //If still anything but 41, 73 or 79, then it's not talking
   if (PS2data[1] != 0x41 && PS2data[1] != 0x42 && PS2data[1] != 0x73 && PS2data[1] != 0x79) {
 #ifdef PS2X_DEBUG
-    Serial.println("Controller mode not matched or no controller found");
-    Serial.print("Expected 0x41, 0x42, 0x73 or 0x79, but got ");
+    Serial.println(F("Controller mode not matched or no controller found"));
+    Serial.print(F("Expected 0x41, 0x42, 0x73 or 0x79, but got "));
     Serial.println(PS2data[1], HEX);
 #endif
     return 1; //return error code 1
@@ -305,8 +305,8 @@ byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bo
 
     if (y == 10) {
 #ifdef PS2X_DEBUG
-      Serial.println("Controller not accepting commands");
-      Serial.print("mode still set at");
+      Serial.println(F("Controller not accepting commands"));
+      Serial.print(F("mode still set at"));
       Serial.println(PS2data[1], HEX);
 #endif
       return 2; //exit function with error
@@ -375,7 +375,7 @@ byte PS2X::readType() {
 
   return 0;
 */
-  Serial.print("Controller_type: ");
+  Serial.print(F("Controller_type: "));
   Serial.println(controller_type, HEX);
   if (controller_type == 0x03)
     return 1;

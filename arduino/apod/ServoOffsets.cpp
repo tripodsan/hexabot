@@ -6,10 +6,41 @@
 
 #define USE_PS2_CONTROLLER
 
+const __FlashStringHelper * getServoName(int idx) {
+  switch (idx) {
+    case  0: return F("RR Coxa ");
+    case  1: return F("RR Femur");
+    case  2: return F("RR Tibia");
+    case  3: return F("RM Coxa ");
+    case  4: return F("RM Femur");
+    case  5: return F("RM Tibia");
+    case  6: return F("RF Coxa ");
+    case  7: return F("RF Femur");
+    case  8: return F("RF Tibia");
+    case  9: return F("LR Coxa ");
+    case 10: return F("LR Femur");
+    case 11: return F("LR Tibia");
+    case 12: return F("LM Coxa ");
+    case 13: return F("LM Femur");
+    case 14: return F("LM Tibia");
+    case 15: return F("LF Coxa ");
+    case 16: return F("LF Femur");
+    case 17: return F("LF Tibia");
+    case 18: return F("HD LMand");
+    case 19: return F("HD RMand");
+    case 20: return F("HD Pan  ");
+    case 21: return F("HD Tilt ");
+    case 22: return F("HD Rot  ");
+    case 23: return F("TL Pan  ");
+    case 24: return F("TL Tilt ");
+    default: return F("Unknown ");
+  }
+}
+
 void printOffsets(int8_t asOffsets[]) {
   for (int i = 0; i < NUMSERVOS; i++) {
     Serial.print("Servo: ");
-    Serial.print(ALL_SERVOS_NAMES[i]);
+    Serial.print(getServoName(i));
     Serial.print("(");
     Serial.print(asOffsets[i], DEC);
     Serial.println(")");
@@ -27,7 +58,7 @@ void ServoDriver::FindServoOffsets() {
 
   if (CheckVoltage()) {
     // Voltage is low...
-    Serial.println("Low Voltage: fix or hit $ to abort");
+    Serial.println(F("Low Voltage: fix or hit $ to abort"));
     while (CheckVoltage()) {
       if (Serial.read() == '$') return;
     }
@@ -51,13 +82,13 @@ void ServoDriver::FindServoOffsets() {
   printOffsets(asOffsets);
 
   // OK lets move all of the servos to their zero point.
-  Serial.println("Find Servo Zeros.\n$-Exit, +- changes, *-change servo");
-  Serial.println("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia");
-  Serial.println("    6 Chooses a mandible, L-Left, R-Right");
-  Serial.println("    7 Chooses head, P-Pan, T-Tilt, R-Rot");
-  Serial.println("    8 Chooses tail, P-Pan, T-Tilt");
+  Serial.println(F("Find Servo Zeros.\n$-Exit, +- changes, *-change servo"));
+  Serial.println(F("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia"));
+  Serial.println(F("    6 Chooses a mandible, L-Left, R-Right"));
+  Serial.println(F("    7 Chooses head, P-Pan, T-Tilt, R-Rot"));
+  Serial.println(F("    8 Chooses tail, P-Pan, T-Tilt"));
 #ifdef USE_PS2_CONTROLLER
-  Serial.println("    ps2: []-prev, O-next, pad +/-");
+  Serial.println(F("    ps2: []-prev, O-next, pad +/-"));
 #endif
 
   idx = 0;
@@ -66,7 +97,7 @@ void ServoDriver::FindServoOffsets() {
     if (idx != prevIdx) {
       prevIdx = idx;
       Serial.print("Servo: ");
-      Serial.print(ALL_SERVOS_NAMES[idx]);
+      Serial.print(getServoName(idx));
       Serial.print("(");
       Serial.print(asOffsets[idx], DEC);
       Serial.println(")");
@@ -183,9 +214,9 @@ void ServoDriver::FindServoOffsets() {
     }
   }
 
-  Serial.print("Find Servo exit ");
+  Serial.print(F("Find Servo exit "));
   printOffsets(asOffsets);
-  Serial.print("\nSave Changes? Y/N: ");
+  Serial.print(F("\nSave Changes? Y/N: "));
 
   //get user entered data
   while (((data = Serial.read()) == -1) || ((data >= 10) && (data <= 15)));

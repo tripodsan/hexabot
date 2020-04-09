@@ -43,18 +43,6 @@ const static uint8_t ALL_SERVOS_PINS[] = {
     cLMandPin, cRMandPin, cHeadPanPin, cHeadTiltPin, cHeadRotPin, cTailPanPin, cTailTiltPin
 };
 
-const static char *ALL_SERVOS_NAMES[] = {
-    "RR  Coxa", "RR Femur", "RR Tibia",
-    "RM  Coxa", "RM Femur", "RM Tibia",
-    "RF  Coxa", "RF Femur", "RF Tibia",
-    "LR  Coxa", "LR Femur", "LR Tibia",
-    "LM  Coxa", "LM Femur", "LM Tibia",
-    "LF  Coxa", "LF Femur", "LF Tibia",
-    "HD LMand", "HD RMand",
-    "HD  Pan ", "HD  Tilt", "HD  Rot ",
-    "TL  Pan ", "TL  Tilt",
-};
-
 #define NUM_GAITS    5
 
 extern void GaitSelect();

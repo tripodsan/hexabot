@@ -16,7 +16,7 @@ set(${PROJECT_NAME}_SRCS apod.cpp ServoDriver.cpp ServoOffsets.cpp PS2X_lib.cpp 
 # set(${PROJECT_NAME}_LIBS)
 
 ### Main sketch file
-set(${PROJECT_NAME}_SKETCH main.ino)
+set(${PROJECT_NAME}_SKETCH apod.ino)
 
 ### Add project directories into the build
 # add_subdirectory()

@@ -284,9 +284,12 @@ void apod_setup() {
   g_fDebugOutput = true;
 
   DBGSerial.begin(57600);
-  DBGSerial.write("Program Start\n\r");
-  DBGSerial.write("Built: ");
-  DBGSerial.write(__TIMESTAMP__"\n\r");
+  while (!DBGSerial);
+  DBGSerial.println(F("Program Start"));
+  DBGSerial.print(F("Built: "));
+  DBGSerial.println(F(__TIMESTAMP__));
+  DBGSerial.flush();
+  delay(1000);
 
   // Init our ServoDriver
   g_ServoDriver.Init();

@@ -22,7 +22,7 @@
 
 //#ifdef USEPS2
 
-#include <PS2X_lib.h>
+#include "PS2X_lib.h"
 
 extern void PS2Init();
 
