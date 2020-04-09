@@ -41,7 +41,7 @@
 #else
 #endif
 
-#define USEPS2
+//#define USEPS2
 
 //[SERIAL CONNECTIONS]
 
@@ -55,8 +55,10 @@
 //--------------------------------------------------------------------
 // [BotBoarduino]
 #define SOUND_PIN       5  // Botboarduino JR pin number
-#define GRIP_PIN       2  // Analog pin for gripper pressure sensor
-#define PS2_SEL         6  // On the PS2 receiver this pin may be called ATT (attention)
+#define GRIP_PIN        2  // Analog pin for gripper pressure sensor
+#define RSV_1           3  // used by tone()
+#define RSV_1          11  // used by tone()
+#define PS2_ATT         6
 #define PS2_CMD         7
 #define PS2_DAT         8
 #define PS2_CLK         9
@@ -65,38 +67,38 @@
 
 //====================================================================
 //[SSC PIN NUMBERS]
-#define cRRCoxaPin      24   //Rear Right leg Hip Horizontal
-#define cRRFemurPin     25   //Rear Right leg Hip Vertical
-#define cRRTibiaPin     26  //Rear Right leg Knee
+#define cRRCoxaPin      28  // Rear Right leg Hip Horizontal
+#define cRRFemurPin     29  // Rear Right leg Hip Vertical
+#define cRRTibiaPin     30  // Rear Right leg Knee
 
-#define cRMCoxaPin      20   //Middle Right leg Hip Horizontal
-#define cRMFemurPin     21   //Middle Right leg Hip Vertical
-#define cRMTibiaPin     22   //Middle Right leg Knee
+#define cRMCoxaPin      20  // Middle Right leg Hip Horizontal
+#define cRMFemurPin     21  // Middle Right leg Hip Vertical
+#define cRMTibiaPin     22  // Middle Right leg Knee
 
-#define cRFCoxaPin      16   //Front Right leg Hip Horizontal
-#define cRFFemurPin     17   //Front Right leg Hip Vertical
-#define cRFTibiaPin     18   //Front Right leg Knee
+#define cRFCoxaPin      16  // Front Right leg Hip Horizontal
+#define cRFFemurPin     17  // Front Right leg Hip Vertical
+#define cRFTibiaPin     18  // Front Right leg Knee
 
-#define cLRCoxaPin      8   //Rear Left leg Hip Horizontal
-#define cLRFemurPin     9   //Rear Left leg Hip Vertical
-#define cLRTibiaPin     10   //Rear Left leg Knee
+#define cLRCoxaPin      12  // Rear Left leg Hip Horizontal
+#define cLRFemurPin     13  // Rear Left leg Hip Vertical
+#define cLRTibiaPin     14  // Rear Left leg Knee
 
-#define cLMCoxaPin      4   //Middle Left leg Hip Horizontal
-#define cLMFemurPin     5   //Middle Left leg Hip Vertical
-#define cLMTibiaPin     6   //Middle Left leg Knee
+#define cLMCoxaPin      4   // Middle Left leg Hip Horizontal
+#define cLMFemurPin     5   // Middle Left leg Hip Vertical
+#define cLMTibiaPin     6   // Middle Left leg Knee
 
-#define cLFCoxaPin      0   //Front Left leg Hip Horizontal
-#define cLFFemurPin     1   //Front Left leg Hip Vertical
-#define cLFTibiaPin     2   //Front Left leg Knee
+#define cLFCoxaPin      0   // Front Left leg Hip Horizontal
+#define cLFFemurPin     1   // Front Left leg Hip Vertical
+#define cLFTibiaPin     2   // Front Left leg Knee
 
-#define cLMandPin       14  // Left Mandible
-#define cRMandPin       13  // Right Mandible
-#define cHeadPanPin     30  // Head Pan (horizontal)
-#define cHeadTiltPin    12  // Head Tilt (vertical)
-#define cHeadRotPin     15  // Head Rotate
+#define cLMandPin       10  // Left Mandible
+#define cRMandPin        9  // Right Mandible
+#define cHeadPanPin     11  // Head Pan (horizontal)
+#define cHeadTiltPin     8  // Head Tilt (vertical)
+#define cHeadRotPin     26  // Head Rotate
 
-#define cTailPanPin     28  // Tail Pan (horizontal)
-#define cTailTiltPin    29  // Tail Tilt (vertical)
+#define cTailPanPin     24  // Tail Pan (horizontal)
+#define cTailTiltPin    25  // Tail Tilt (vertical)
 
 //--------------------------------------------------------------------
 //[MIN/MAX ANGLES]

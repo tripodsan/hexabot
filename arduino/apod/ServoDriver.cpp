@@ -29,18 +29,9 @@ extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
 //--------------------------------------------------------------------
 void ServoDriver::Init() {
   DBGSerial.println("---init server driver---");
-#ifdef __AVR__
-#if not defined(UBRR1H)
-#if cSSC_IN != 0
-  pinMode(cSSC_IN, INPUT);
-  pinMode(cSSC_OUT, OUTPUT);
-  SSCSerial.listen();
-#endif
-#endif
-#endif
-
   SSCSerial.begin(cSSC_BAUD);
   SSCSerial.listen();
+  delay(500);
   SSCSerial.print("ver\r");
 
   char abVer[40];        // give a nice large buffer.

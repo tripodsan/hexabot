@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <PS2X_lib.h>
 #include <pins_arduino.h>
 #include <SoftwareSerial.h>
 #include "globals.h"
+#include "PS2Support.h"
 
 #define BalanceDivFactor 6    //;Other values than 6 can be used, testing...CAUTION!! At your own risk ;)
 
@@ -282,9 +282,8 @@ void apod_setup() {
 
   g_fShowDebugPrompt = true;
   g_fDebugOutput = true;
-#ifdef DBGSerial
+
   DBGSerial.begin(57600);
-#endif
   DBGSerial.write("Program Start\n\r");
   DBGSerial.write("Built: ");
   DBGSerial.write(__TIMESTAMP__"\n\r");
@@ -293,9 +292,9 @@ void apod_setup() {
   g_ServoDriver.Init();
 
   pinMode(PS2_CMD, INPUT);
-  if (!digitalRead(PS2_CMD)) {
-    g_ServoDriver.SSCForwarder();
-  }
+//  if (!digitalRead(PS2_CMD)) {
+//    g_ServoDriver.SSCForwarder();
+//  }
 
   // debug stuff
   delay(10);
@@ -352,7 +351,11 @@ void apod_setup() {
   GaitStep = 1;
   GaitSelect();
 
+  PS2Init();
+
+#ifdef USEPS2
   g_InputController.Init();
+#endif
 
   // Servo Driver
   ServoMoveTime = 150;
@@ -360,6 +363,8 @@ void apod_setup() {
   g_fLowVoltageShutdown = false;
 
   MSound(SOUND_PIN, 3, 100, 500, 120, 500, 130, 500);
+  delay(500);
+  tone(SOUND_PIN, 440, 1000);
 }
 
 //=============================================================================
@@ -372,7 +377,9 @@ void apod_loop() {
   CheckVoltage();        // check our voltages...
 
   if (!g_fLowVoltageShutdown) {
+#ifdef USEPS2
     g_InputController.ControlInput();
+#endif
   }
 
   if (g_InControlState.fHexOn) {
@@ -1302,6 +1309,7 @@ boolean TerminalMonitor() {
         DBGSerial.println("Debug is off");
 #ifdef OPT_FIND_SERVO_OFFSETS
     } else if ((ich == 1) && ((szCmdLine[0] == 'o') || (szCmdLine[0] == 'O'))) {
+      delay(10);
       g_ServoDriver.FindServoOffsets();
 #endif
 #ifdef OPT_SSC_FORWARDER

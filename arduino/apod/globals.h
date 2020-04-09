@@ -5,6 +5,7 @@
 //==============================================================================
 #ifndef _HEX_GLOBALS_H_
 #define _HEX_GLOBALS_H_
+
 #include <SoftwareSerial.h>
 #include "config.h"
 #include "ServoDriver.h"
@@ -14,42 +15,66 @@
 //[CONSTANTS]
 //=============================================================================
 #define BUTTON_DOWN 0
-#define BUTTON_UP 	1
+#define BUTTON_UP  1
 
-#define	c1DEC		10
-#define	c2DEC		100
-#define	c4DEC		10000
-#define	c6DEC		1000000
+#define  c1DEC    10
+#define  c2DEC    100
+#define  c4DEC    10000
+#define  c6DEC    1000000
 
-#define	cRR			0
-#define	cRM			1
-#define	cRF			2
-#define	cLR			3
-#define	cLM			4
-#define	cLF			5
+#define  cRR      0
+#define  cRM      1
+#define  cRF      2
+#define  cLR      3
+#define  cLM      4
+#define  cLF      5
 
-#define	WTIMERTICSPERMSMUL  	64	// BAP28 is 16mhz need a multiplyer and divider to make the conversion with /8192
-#define WTIMERTICSPERMSDIV  	125 // 
+#define  WTIMERTICSPERMSMUL    64  // BAP28 is 16mhz need a multiplyer and divider to make the conversion with /8192
+#define WTIMERTICSPERMSDIV    125 //
 #define USEINT_TIMERAV
 
+#define SERVO_MAND_IDX (NUMSERVOSPERLEG * 6)
+#define SERVO_HEAD_IDX (NUMSERVOSPERLEG * 6 + 2)
+#define SERVO_TAIL_IDX (NUMSERVOSPERLEG * 6 + 5)
 
+const static uint8_t ALL_SERVOS_PINS[] = {
+    cRRCoxaPin, cRRFemurPin, cRRTibiaPin, cRMCoxaPin, cRMFemurPin, cRMTibiaPin, cRFCoxaPin, cRFFemurPin, cRFTibiaPin,
+    cLRCoxaPin, cLRFemurPin, cLRTibiaPin, cLMCoxaPin, cLMFemurPin, cLMTibiaPin, cLFCoxaPin, cLFFemurPin, cLFTibiaPin,
+    cLMandPin, cRMandPin, cHeadPanPin, cHeadTiltPin, cHeadRotPin, cTailPanPin, cTailTiltPin
+};
+
+const static char *ALL_SERVOS_NAMES[] = {
+    "RR  Coxa", "RR Femur", "RR Tibia",
+    "RM  Coxa", "RM Femur", "RM Tibia",
+    "RF  Coxa", "RF Femur", "RF Tibia",
+    "LR  Coxa", "LR Femur", "LR Tibia",
+    "LM  Coxa", "LM Femur", "LM Tibia",
+    "LF  Coxa", "LF Femur", "LF Tibia",
+    "HD LMand", "HD RMand",
+    "HD  Pan ", "HD  Tilt", "HD  Rot ",
+    "TL  Pan ", "TL  Tilt",
+};
 
 #define NUM_GAITS    5
+
 extern void GaitSelect();
+
 extern short SmoothControl(short CtrlMoveInp, short CtrlMoveOut, byte CtrlDivider);
 
 
 //-----------------------------------------------------------------------------
 // Define global class objects
 //-----------------------------------------------------------------------------
-extern ServoDriver      g_ServoDriver;           // our global servo driver class
-extern InputController  g_InputController;       // Our Input controller 
-extern INCONTROLSTATE   g_InControlState;		 // State information that controller changes
+extern ServoDriver g_ServoDriver;           // our global servo driver class
+#ifdef USEPS2
+extern InputController g_InputController;       // Our Input controller
+extern INCONTROLSTATE g_InControlState;     // State information that controller changes
+#endif
 
 //-----------------------------------------------------------------------------
 // Define Global variables
 //-----------------------------------------------------------------------------
-extern boolean          g_fDebugOutput;
+extern boolean g_fDebugOutput;
 
 #if 0
 extern boolean		g_fHexOn;				//Switch to turn on Phoenix
@@ -98,8 +123,10 @@ extern void MSound(uint8_t _pin, byte cNotes, ...);
 
 // The defined controller must provide the following
 extern void InitController();
-extern void	ControlInput();
-extern void	AllowControllerInterrupts(boolean fAllow);
+
+extern void ControlInput();
+
+extern void AllowControllerInterrupts(boolean fAllow);
 
 
 extern bool CheckVoltage();
