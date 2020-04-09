@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include <pins_arduino.h>
 #include <SoftwareSerial.h>
+#include <stddef.h>
 #include "globals.h"
 #include "PS2Support.h"
+#include "pitches.h"
 
 #define BalanceDivFactor 6    //;Other values than 6 can be used, testing...CAUTION!! At your own risk ;)
 
@@ -117,20 +119,9 @@ short MandibleAngle;
 short LegPosX[6];    //Actual X Posion of the Leg
 short LegPosY[6];    //Actual Y Posion of the Leg
 short LegPosZ[6];    //Actual Z Posion of the Leg
-//--------------------------------------------------------------------
-//[INPUTS]
-
-//--------------------------------------------------------------------
-//[GP PLAYER]
-//--------------------------------------------------------------------
-//[OUTPUTS]
-boolean LedA;    //Red
-boolean LedB;    //Green
-boolean LedC;    //Orange
 
 //--------------------------------------------------------------------
 //[VARIABLES]
-byte Index;                    //Index universal used
 byte LegIndex;                //Index used for leg Index Number
 
 //GetSinCos / ArcCos
@@ -279,13 +270,51 @@ void DBGSeparator() {
   DBGSerial.println();
 }
 
+long noteStart = 0;
+long noteDur = 0;
+const int* noteTrack = nullptr;
+
+void music_update() {
+  if (!noteTrack) {
+    return;
+  }
+  long now = millis();
+  long delta = now - noteStart;
+  if (delta < noteDur) {
+    return;
+  }
+  int freq = *(noteTrack++);
+  if (freq < 0) {
+    noteTrack = nullptr;
+    return;
+  }
+  noteStart = now;
+  noteDur = *(noteTrack++);
+  tone(SOUND_PIN, freq, noteDur);
+}
+
+void music_play(const int notes[]) {
+  noteTrack = notes;
+  noteStart = 0;
+  noteDur = 0;
+  music_update();
+}
+
+void music_wait(unsigned long duration) {
+  unsigned long start = millis();
+  do {
+    music_update();
+    delay(5);
+  } while (millis() - start < duration);
+}
+
+const int TUNE_SHUTDOWN[] = { NOTE_C5, 200, NOTE_G4, 100, NOTE_G4, 100, NOTE_A4, 200, NOTE_G4, 200, NOTE_OFF, 200, NOTE_B4, 200, NOTE_C5, 200, -1 };
+const int TUNE_STARTUP[] = { NOTE_C4, 200, NOTE_E4, 200, NOTE_G4, 200, NOTE_B4, 200, NOTE_OFF, 200, NOTE_B4, 200, NOTE_C5, 200, -1 };
+
 //--------------------------------------------------------------------------
 // SETUP: the main arduino setup function.
 //--------------------------------------------------------------------------
 void apod_setup() {
-
-  int error;
-
   g_fShowDebugPrompt = true;
   g_fDebugOutput = true;
 
@@ -299,19 +328,6 @@ void apod_setup() {
 
   // Init our ServoDriver
   g_ServoDriver.Init();
-
-//  pinMode(PS2_CMD, INPUT);
-//  if (!digitalRead(PS2_CMD)) {
-//    g_ServoDriver.SSCForwarder();
-//  }
-
-  // debug stuff
-  delay(10);
-
-  //Turning off all the leds
-  LedA = false;
-  LedB = false;
-  LedC = false;
 
   //Tars Init Positions
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
@@ -372,15 +388,14 @@ void apod_setup() {
   g_InControlState.fHexOn = false;
   g_fLowVoltageShutdown = false;
 
-  MSound(SOUND_PIN, 3, 100, 500, 120, 500, 130, 500);
-  delay(500);
-  tone(SOUND_PIN, 440, 1000);
+  music_play(TUNE_STARTUP);
 }
 
 //=============================================================================
 // Loop: the main arduino main Loop function
 //=============================================================================
 void apod_loop() {
+  music_update();
   //Start time
   lTimerStart = millis();
   //Read input
@@ -407,14 +422,20 @@ void apod_loop() {
 }
 
 void PowerUp() {
-  MSound(SOUND_PIN, 3, 60, 2000, 80, 2250, 100, 2500);
-  DBGSerial.println("Ready for action!");
+  ServoMoveTime = 600;
+  UpdateLegServos();
+  g_ServoDriver.CommitServoDriver(ServoMoveTime);
+  UpdateNonLegServos();
+
+  // play boot up tune
+  for (int f = 440; f < 880; f += 10) {
+    tone(SOUND_PIN, f, 10);
+    delay(10);
+  }
+  DBGSerial.println(F("Ready for action!"));
 }
 
 void PowerDown() {
-  MSound(SOUND_PIN, 3, 100, 2500, 80, 2250, 60, 2000);
-  DBGSerial.println("Goodbye.");
-
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
     CoxaAngle1[LegIndex] = 0;
     FemurAngle1[LegIndex] = (short) pgm_read_word(&cFemurMin1[LegIndex]);
@@ -427,8 +448,15 @@ void PowerDown() {
   g_ServoDriver.CommitServoDriver(ServoMoveTime);
   UpdateNonLegServos();
 
+  // play power down tune
+  for (int f = 880; f > 440; f -= 10) {
+    tone(SOUND_PIN, f, 10);
+    delay(10);
+  }
+  delay(200);
+  DBGSerial.println(F("Goodbye."));
+
   // and turn servos off.
-  delay(600);
   g_ServoDriver.FreeServos();
 }
 
@@ -512,10 +540,6 @@ void ActiveLoop() {
 
   //Check mechanical limits
   CheckAngles();
-
-  //Write IK errors to leds
-  LedC = IKSolutionWarning;
-  LedA = IKSolutionError;
 
   //Calculate Servo Move time
   if ((abs(g_InControlState.TravelLength.x) > cTravelDeadZone) ||
