@@ -90,7 +90,6 @@ const short cInitPosZ[] PROGMEM = {cRRInitPosZ, cRMInitPosZ, cRFInitPosZ, cLRIni
 boolean g_fShowDebugPrompt;
 boolean g_fDebugOutput = true;
 
-
 //--------------------------------------------------------------------
 //[REMOTE]
 #define cTravelDeadZone         4    //The deadzone for the analog input from the remote
@@ -273,6 +272,13 @@ void PowerUp();
 
 void PowerDown();
 
+void DBGSeparator() {
+  for (int i = 0; i < 16; i++) {
+    DBGSerial.print('-');
+  }
+  DBGSerial.println();
+}
+
 //--------------------------------------------------------------------------
 // SETUP: the main arduino setup function.
 //--------------------------------------------------------------------------
@@ -285,16 +291,16 @@ void apod_setup() {
 
   DBGSerial.begin(57600);
   while (!DBGSerial);
-  DBGSerial.println(F("Program Start"));
-  DBGSerial.print(F("Built: "));
-  DBGSerial.println(F(__TIMESTAMP__));
+  DBGSerial.print(F("A-Pod Controller ("));
+  DBGSerial.print(F(__TIMESTAMP__));
+  DBGSerial.println(')');
+  DBGSeparator();
   DBGSerial.flush();
-  delay(1000);
 
   // Init our ServoDriver
   g_ServoDriver.Init();
 
-  pinMode(PS2_CMD, INPUT);
+//  pinMode(PS2_CMD, INPUT);
 //  if (!digitalRead(PS2_CMD)) {
 //    g_ServoDriver.SSCForwarder();
 //  }
@@ -354,9 +360,10 @@ void apod_setup() {
   GaitStep = 1;
   GaitSelect();
 
-  PS2Init();
 
 #ifdef USEPS2
+  DBGSeparator();
+  PS2Init();
   g_InputController.Init();
 #endif
 
@@ -407,6 +414,12 @@ void PowerUp() {
 void PowerDown() {
   MSound(SOUND_PIN, 3, 100, 2500, 80, 2250, 60, 2000);
   DBGSerial.println("Goodbye.");
+
+  for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
+    CoxaAngle1[LegIndex] = 0;
+    FemurAngle1[LegIndex] = (short) pgm_read_word(&cFemurMin1[LegIndex]);
+    TibiaAngle1[LegIndex] = (short) pgm_read_word(&cTibiaMin1[LegIndex]);
+  }
 
   // last update...
   ServoMoveTime = 600;
@@ -1197,7 +1210,6 @@ void LegIK(short IKFeetPosX, short IKFeetPosY, short IKFeetPosZ, byte LegIKLegNr
 //[CHECK ANGLES] Checks the mechanical limits of the servos
 //--------------------------------------------------------------------
 void CheckAngles() {
-
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
     CoxaAngle1[LegIndex] = min(max(CoxaAngle1[LegIndex], (short) pgm_read_word(&cCoxaMin1[LegIndex])),
                                (short) pgm_read_word(&cCoxaMax1[LegIndex]));
@@ -1274,13 +1286,14 @@ boolean TerminalMonitor() {
   int ch;
   // See if we need to output a prompt.
   if (g_fShowDebugPrompt) {
-    DBGSerial.println("A-Pod Terminal");
-    DBGSerial.println("D - Toggle debug on or off");
+    DBGSeparator();
+    DBGSerial.println(F("A-Pod Terminal"));
+    DBGSerial.println(F("D - Toggle debug on or off"));
 #ifdef OPT_FIND_SERVO_OFFSETS
-    DBGSerial.println("O - Enter Servo offset mode");
+    DBGSerial.println(F("O - Enter Servo offset mode"));
 #endif
 #ifdef OPT_SSC_FORWARDER
-    DBGSerial.println("S - SSC Forwarder");
+    DBGSerial.println(F("S - SSC Forwarder"));
 #endif
     g_fShowDebugPrompt = false;
   }
@@ -1297,9 +1310,9 @@ boolean TerminalMonitor() {
       szCmdLine[ich] = ch;
     }
     szCmdLine[ich] = '\0';    // go ahead and null terminate it...
-    DBGSerial.print("Serial Cmd Line:");
-    DBGSerial.write(szCmdLine, ich);
-    DBGSerial.println("!!!");
+//    DBGSerial.print("Serial Cmd Line:");
+//    DBGSerial.write(szCmdLine, ich);
+//    DBGSerial.println("!!!");
 
     // So see what are command is.
     if (ich == 0) {
@@ -1307,9 +1320,9 @@ boolean TerminalMonitor() {
     } else if ((ich == 1) && ((szCmdLine[0] == 'd') || (szCmdLine[0] == 'D'))) {
       g_fDebugOutput = !g_fDebugOutput;
       if (g_fDebugOutput)
-        DBGSerial.println("Debug is on");
+        DBGSerial.println(F("Debug is on"));
       else
-        DBGSerial.println("Debug is off");
+        DBGSerial.println(F("Debug is off"));
 #ifdef OPT_FIND_SERVO_OFFSETS
     } else if ((ich == 1) && ((szCmdLine[0] == 'o') || (szCmdLine[0] == 'O'))) {
       delay(10);
@@ -1320,7 +1333,6 @@ boolean TerminalMonitor() {
       g_ServoDriver.SSCForwarder();
 #endif
     }
-
     return true;
   }
   return false;

@@ -20,12 +20,14 @@
 
 #include "config.h"
 
-//#ifdef USEPS2
+#ifdef USEPS2
 
 #include "PS2X_lib.h"
 
+inline PS2X ps2x;
+
 extern void PS2Init();
 
-//#endif // USEPS2
+#endif // USEPS2
 
 #endif //APOD_ARDUINO_PS2SUPPORT_H

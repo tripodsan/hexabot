@@ -28,15 +28,15 @@ extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
 //Init
 //--------------------------------------------------------------------
 void ServoDriver::Init() {
-  DBGSerial.println("---init server driver---");
+  DBGSerial.println(F("Init servo driver"));
   SSCSerial.begin(cSSC_BAUD);
   SSCSerial.listen();
-  delay(500);
+  delay(100);
   SSCSerial.print("ver\r");
 
   char abVer[40];        // give a nice large buffer.
   int cbRead = SSCRead((byte*)abVer, sizeof(abVer), 10000, 13);
-  DBGSerial.print("SSC Version: ");
+  DBGSerial.print(F("SSC Version: "));
   if (cbRead > 0) {
     DBGSerial.write((byte*)abVer, cbRead);
   } else {
@@ -49,10 +49,6 @@ void ServoDriver::Init() {
 //[OutputServoInfoForLeg] Do the output to the SSC-32 for the servos associated with
 //         the Leg number passed in.
 //------------------------------------------------------------------------------------------
-#define cPwmDiv       991  //old 1059;
-#define cPFConst      592  //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
-// A PWM/deg factor of 10,09 give cPwmDiv = 991 and cPFConst = 592
-// For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900.
 
 void ServoDriver::OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1)
 {

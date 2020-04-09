@@ -18,20 +18,6 @@ static byte exit_config[] = {0x01, 0x43, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5
 static byte enable_rumble[] = {0x01, 0x4D, 0x00, 0x00, 0x01};
 static byte type_read[] = {0x01, 0x45, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A};
 
-PS2X *PS2X::m_pInstance = nullptr;
-
-int count = 0;
-PS2X::PS2X() {
-  count++;
-}
-
-PS2X *PS2X::Instance() {
-  if (!m_pInstance) {
-    m_pInstance = new PS2X;
-  }
-  return m_pInstance;
-}
-
 /****************************************************************************************/
 boolean PS2X::NewButtonState() {
   return ((last_buttons ^ buttons) > 0);
@@ -181,11 +167,6 @@ byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat) {
 
 /****************************************************************************************/
 byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bool pressures, bool rumble) {
-  Serial.print("Config gamepad: ");
-  Serial.println(count);
-  Serial.flush();
-  delay(1000);
-
   byte temp[sizeof(type_read)];
 
 #ifdef __AVR__
@@ -238,7 +219,7 @@ byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bo
   digitalWrite(dat, HIGH); //enable pull-up
 #endif
 
-  CMD_SET(); // SET(*_cmd_oreg,_cmd_mask);
+  CMD_SET();
   CLK_SET();
 
   //new error checking. First, read gamepad a few times to see if it's talking
@@ -248,10 +229,10 @@ byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bo
 
   //see if it talked - see if mode came back.
   //If still anything but 41, 73 or 79, then it's not talking
-  if (PS2data[1] != 0x41 && PS2data[1] != 0x42 && PS2data[1] != 0x73 && PS2data[1] != 0x79) {
+  if (PS2data[1] != 0x41 && PS2data[1] != 0x42 && PS2data[1] != 0x73 && PS2data[1] != 0x79 && PS2data[1] != 0x71) {
 #ifdef PS2X_DEBUG
     Serial.println(F("Controller mode not matched or no controller found"));
-    Serial.print(F("Expected 0x41, 0x42, 0x73 or 0x79, but got "));
+    Serial.print(F("Expected 0x41, 0x42, 0x73 or 0x79, or 0x71 but got "));
     Serial.println(PS2data[1], HEX);
 #endif
     return 1; //return error code 1
@@ -349,34 +330,10 @@ void PS2X::sendCommandString(byte string[], byte len) {
 
 /****************************************************************************************/
 byte PS2X::readType() {
-/*
-  byte temp[sizeof(type_read)];
-
-  sendCommandString(enter_config, sizeof(enter_config));
-
-  delayMicroseconds(CTRL_BYTE_DELAY);
-
-  CMD_SET();
-  CLK_SET();
-  ATT_CLR(); // low enable joystick
-
-  delayMicroseconds(CTRL_BYTE_DELAY);
-
-  for (int i = 0; i<9; i++) {
-    temp[i] = _gamepad_shiftinout(type_read[i]);
-  }
-
-  sendCommandString(exit_config, sizeof(exit_config));
-
-  if(temp[3] == 0x03)
-    return 1;
-  else if(temp[3] == 0x01)
-    return 2;
-
-  return 0;
-*/
+#ifdef PS2X_DEBUG
   Serial.print(F("Controller_type: "));
   Serial.println(controller_type, HEX);
+#endif
   if (controller_type == 0x03)
     return 1;
   else if (controller_type == 0x01 && PS2data[1] == 0x42)

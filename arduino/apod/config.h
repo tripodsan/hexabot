@@ -41,7 +41,7 @@
 #else
 #endif
 
-//#define USEPS2
+#define USEPS2
 
 //[SERIAL CONNECTIONS]
 
@@ -246,3 +246,8 @@
 #define cLFInitPosY     CHexInitY
 #define cLFInitPosZ     -CHexInitXZSin45
 
+#define cPwmDiv       991  //old 1059;
+#define cPFConst      592  //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
+// A PWM/deg factor of 10,09 give cPwmDiv = 991 and cPFConst = 592
+// For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900.
+#define DEG2PWM(deg) ((long)(deg) * 2000L / 1800L + 1500L)

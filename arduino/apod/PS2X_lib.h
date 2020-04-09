@@ -74,23 +74,16 @@ GNU General Public License for more details.
 
 // $$$$$$$$$$$$ DEBUG ENABLE SECTION $$$$$$$$$$$$$$$$
 // to debug ps2 controller, uncomment these two lines to print out debug to uart
-#define PS2X_DEBUG
+//#define PS2X_DEBUG
 //#define PS2X_COM_DEBUG
 
 #ifndef PS2X_lib_h
 #define PS2X_lib_h
 
-#if ARDUINO > 22
-
-#include "Arduino.h"
-
-#else
-#include "WProgram.h"
-#endif
-
-#include <math.h>
-#include <stdio.h>
-#include <stdint.h>
+#include <Arduino.h>
+//#include <math.h>
+//#include <stdio.h>
+//#include <stdint.h>
 
 #ifdef __AVR__
 // AVR
@@ -178,12 +171,8 @@ GNU General Public License for more details.
 
 class PS2X {
 public:
-
-  PS2X();
-
-  static PS2X* Instance();
-
   boolean Button(uint16_t);                //will be TRUE if button is being pressed
+
   unsigned int ButtonDataByte();
 
   boolean NewButtonState();
@@ -210,23 +199,19 @@ public:
   void reconfig_gamepad();
 
 private:
-  PS2X(PS2X const&){};
-  PS2X& operator=(PS2X const&){};
-  static PS2X* m_pInstance;
+  inline void CLK_SET();
 
-  inline void CLK_SET(void);
+  inline void CLK_CLR();
 
-  inline void CLK_CLR(void);
+  inline void CMD_SET();
 
-  inline void CMD_SET(void);
+  inline void CMD_CLR();
 
-  inline void CMD_CLR(void);
+  inline void ATT_SET();
 
-  inline void ATT_SET(void);
+  inline void ATT_CLR();
 
-  inline void ATT_CLR(void);
-
-  inline bool DAT_CHK(void);
+  inline bool DAT_CHK();
 
   unsigned char _gamepad_shiftinout(char);
 
@@ -234,14 +219,11 @@ private:
 
   void sendCommandString(byte *, byte);
 
-  unsigned char i;
   unsigned int last_buttons;
+
   unsigned int buttons;
 
 #ifdef __AVR__
-
-  uint8_t maskToBitNum(uint8_t);
-
   uint8_t _clk_mask;
   volatile uint8_t *_clk_oreg;
   uint8_t _cmd_mask;

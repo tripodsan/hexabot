@@ -37,7 +37,7 @@ const __FlashStringHelper * getServoName(int idx) {
   }
 }
 
-void printOffsets(int8_t asOffsets[]) {
+void printOffsets(int asOffsets[]) {
   for (int i = 0; i < NUMSERVOS; i++) {
     Serial.print("Servo: ");
     Serial.print(getServoName(i));
@@ -48,9 +48,9 @@ void printOffsets(int8_t asOffsets[]) {
 }
 
 void ServoDriver::FindServoOffsets() {
-  PS2X *ps2x = PS2X::Instance();
   byte bodyPart = 0;
-  int8_t asOffsets[NUMSERVOS];
+  int offsets[NUMSERVOS];
+  int angles[NUMSERVOS];
 
   uint8_t idx, prevIdx;      // which servo number
   int data;
@@ -72,70 +72,79 @@ void ServoDriver::FindServoOffsets() {
     // now read in the current value...  Maybe should use atoi...
     byte cbRead = SSCRead((byte *) szTemp, sizeof(szTemp), 10000, 13);
     if (cbRead > 0) {
-      asOffsets[idx] = atoi((const char *) szTemp);
+      offsets[idx] = atoi((const char *) szTemp);
     }
     SSCSerial.print("#");
     SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
     SSCSerial.println("P1500");
+    angles[idx] = 0;
   }
 
-  printOffsets(asOffsets);
+  printOffsets(offsets);
 
   // OK lets move all of the servos to their zero point.
-  Serial.println(F("Find Servo Zeros.\n$-Exit, +- changes, *-change servo"));
+  Serial.println(F("Find Servo Zeros.\n$-Exit, +- changes, *-change servo, <> - angles"));
   Serial.println(F("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia"));
   Serial.println(F("    6 Chooses a mandible, L-Left, R-Right"));
   Serial.println(F("    7 Chooses head, P-Pan, T-Tilt, R-Rot"));
   Serial.println(F("    8 Chooses tail, P-Pan, T-Tilt"));
 #ifdef USE_PS2_CONTROLLER
-  Serial.println(F("    ps2: []-prev, O-next, pad +/-"));
+  Serial.println(F("    ps2: []-prev, O-next, pad +/-, R1+L angles"));
 #endif
 
   idx = 0;
   prevIdx = -1;
   while (!fExit) {
+    int offset = offsets[idx];
+    int angle = angles[idx];
     if (idx != prevIdx) {
       prevIdx = idx;
       Serial.print("Servo: ");
       Serial.print(getServoName(idx));
       Serial.print("(");
-      Serial.print(asOffsets[idx], DEC);
+      Serial.print(offsets[idx], DEC);
       Serial.println(")");
+
+      int pwm = DEG2PWM(angle);
 
       // Now lets wiggle the servo
       SSCSerial.print("#");
       SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
       SSCSerial.print("P");
-      SSCSerial.print(1500 + 100, DEC);
+      SSCSerial.print(pwm + 100, DEC);
       SSCSerial.println("T100");
       delay(100);
 
       SSCSerial.print("#");
       SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
       SSCSerial.print("P");
-      SSCSerial.print(1500 - 200, DEC);
+      SSCSerial.print(pwm - 200, DEC);
       SSCSerial.println("T200");
       delay(200);
 
       SSCSerial.print("#");
       SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
       SSCSerial.print("P");
-      SSCSerial.print(1500, DEC);
+      SSCSerial.print(pwm, DEC);
       SSCSerial.println("T100");
       delay(200);
     }
-    int8_t offset = asOffsets[idx];
 
     if (Serial.available()) {
       data = Serial.read();
       if (data == '$') {
         fExit = true;  // not sure how the keypad will map so give NL, CR, LF... all implies exit
-      }
-      else if ((data == '+') || (data == '-')) {
+      } else if ((data == '+') || (data == '-')) {
         if (data == '+') {
           offset += 5;    // increment by 5us
         } else {
           offset -= 5;    // increment by 5us
+        }
+      } else if ((data == '<') || (data == '>')) {
+        if (data == '<') {
+          angle += 10;
+        } else {
+          angle -= 10;    // increment by 5us
         }
       } else if ((data >= '0') && (data <= '5')) {
         // direct enter of which servo to change
@@ -177,45 +186,65 @@ void ServoDriver::FindServoOffsets() {
       }
     }
 #ifdef USE_PS2_CONTROLLER
-    if (ps2x->read_gamepad()) {
-      if (ps2x->ButtonPressed(PSB_CIRCLE)) {
+    if (ps2x.read_gamepad()) {
+      if (ps2x.ButtonPressed(PSB_CIRCLE)) {
         idx = (idx + 1) % NUMSERVOS;
       }
-      if (ps2x->ButtonPressed(PSB_SQUARE)) {
+      if (ps2x.ButtonPressed(PSB_SQUARE)) {
         idx = (idx - 1 + NUMSERVOS) % NUMSERVOS;
       }
-      if (ps2x->ButtonPressed(PSB_PAD_LEFT)) {
+      if (ps2x.ButtonPressed(PSB_PAD_LEFT)) {
         offset--;
       }
-      if (ps2x->ButtonPressed(PSB_PAD_RIGHT)) {
+      if (ps2x.ButtonPressed(PSB_PAD_RIGHT)) {
         offset++;
       }
-      if (ps2x->ButtonPressed(PSB_PAD_UP)) {
+      if (ps2x.ButtonPressed(PSB_PAD_UP)) {
         offset+= 5;
       }
-      if (ps2x->ButtonPressed(PSB_PAD_DOWN)) {
+      if (ps2x.ButtonPressed(PSB_PAD_DOWN)) {
         offset-= 5;
       }
+      if (ps2x.Button(PSB_R1)) {
+        angle += (ps2x.Analog(PSS_LY) - 128) / 8;
+      }
+      delay(10);
     } else {
       Serial.println("no ps2");
     }
-    delay(50);
 #endif
     offset = min(max(offset, -100), 100);
-    if (prevIdx == idx && offset != asOffsets[idx]) {
-      asOffsets[idx] = offset;
+    angle = min(max(angle, -900), 900);
+    if (prevIdx == idx && offset != offsets[idx]) {
+      offsets[idx] = offset;
       Serial.print("    ");
-      Serial.println(asOffsets[idx], DEC);
+      Serial.println(offset, DEC);
 
       SSCSerial.print("#");
       SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
       SSCSerial.print("PO");
-      SSCSerial.println(asOffsets[idx], DEC);
+      SSCSerial.println(offset, DEC);
+    }
+    if (prevIdx == idx && angle != angles[idx]) {
+      angles[idx] = angle;
+      int pwm = DEG2PWM(angle);
+      Serial.print("    ");
+      Serial.print(angle, DEC);
+      Serial.print("° (");
+      Serial.print(pwm);
+      Serial.println(")");
+
+      SSCSerial.print("#");
+      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
+      SSCSerial.print("P");
+      SSCSerial.print(pwm, DEC);
+      SSCSerial.println("T10");
+      delay(10);
     }
   }
 
   Serial.print(F("Find Servo exit "));
-  printOffsets(asOffsets);
+  printOffsets(offsets);
   Serial.print(F("\nSave Changes? Y/N: "));
 
   //get user entered data
@@ -226,7 +255,7 @@ void ServoDriver::FindServoOffsets() {
       SSCSerial.print("R");
       SSCSerial.print(32 + ALL_SERVOS_PINS[idx], DEC);
       SSCSerial.print("=");
-      SSCSerial.println(asOffsets[idx], DEC);
+      SSCSerial.println(offsets[idx], DEC);
       delay(10);
     }
     // bit 2 Initial Pulse: Offset Enable; If '1', enables the Initial Pulse Offset register
