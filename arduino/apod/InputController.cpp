@@ -1,37 +1,20 @@
-//====================================================================
-// Project Lynxmotion Phoenix
-// Description: Phoenix, control file.
-// The control input subroutine for the phoenix software is placed in this file.
-// Can be used with V2.0 and above
-// Configuration version: V1.0
-// Date: 25-10-2009
-// Programmer: Jeroen Janssen (aka Xan)
-//             Kurt Eckhardt (aka KurtE)
-//             tripod
-//
-// Hardware setup: PS2 version
-//
-// NEW IN V1.0
-// - First Release
-
-//====================================================================
-// [Include files]
 #include <Arduino.h>
 #include "globals.h"
+#include "sound.h"
 
 #ifdef USEPS2
 
 #include "PS2Support.h"
 
-//[CONSTANTS]
 #define WALKMODE          0
 #define TRANSLATEMODE     1
-#define ROTATEMODE        2
+#define TILTMODE          2
+#define NUM_MODES         3
+
 #define SINGLELEGMODE     3
 
-static const char* MODE_NAMES[] = {"Walk", "Translate", "Rotate", "Single Leg"};
+static const char *MODE_NAMES[] = {"Walk", "Translate", "Tilt", "Single Leg"};
 
-#define cTravelDeadZone 4      //The deadzone for the analog input from the remote
 #define  MAXPS2ERRORCNT  5     // How many times through the loop will we go before shutting off robot?
 
 //=============================================================================
@@ -50,15 +33,8 @@ static bool DoubleHeightOn;
 static bool DoubleTravelOn;
 static bool WalkMethod;
 
-extern void PS2TurnRobotOff();
+void PS2TurnRobotOff();
 
-//==============================================================================
-// This is The function that is called by the Main program to initialize
-//the input controller, which in this case is the PS2 controller
-//process any commands.
-//==============================================================================
-
-// If both PS2 and XBee are defined then we will become secondary to the xbee
 void InputController::Init() {
   g_BodyYOffset = 65;
   g_BodyYShift = 0;
@@ -70,7 +46,7 @@ void InputController::Init() {
   DoubleTravelOn = false;
   WalkMethod = false;
 
-  g_InControlState.SpeedControl = 100;    // Sort of migrate stuff in from Devon.
+  g_InControlState.SpeedControl = 100;
 }
 
 void openMandibles(short angle1) {
@@ -79,18 +55,8 @@ void openMandibles(short angle1) {
   DBGSerial.println(g_InControlState.MandibleAngle);
 }
 
-//==============================================================================
-// This is The main code to input function to read inputs from the PS2 and then
-//process any commands.
-//==============================================================================
 void InputController::ControlInput() {
-//  PS2X *ps2x = PS2X::Instance();
-  // Then try to receive a packet of information from the PS2.
-  // Then try to receive a packet of information from the PS2.
-  ps2x.read_gamepad();          //read controller and set large motor to spin at 'vibrate' speed
-
-  // Wish the library had a valid way to verify that the read_gamepad succeeded... Will hack for now
-  if ((ps2x.Analog(1) & 0xf0) == 0x70) {
+  if (ps2x.read_gamepad()) {
     // In an analog mode so should be OK...
     g_sPS2ErrorCnt = 0;    // clear out error count...
 
@@ -104,7 +70,7 @@ void InputController::ControlInput() {
     }
 
     if (g_InControlState.fHexOn) {
-
+      // mandibles
       if (ps2x.Button(PSB_L1)) {
         openMandibles(wMandibleInc);
       }
@@ -112,110 +78,93 @@ void InputController::ControlInput() {
         openMandibles(-wMandibleInc);
       }
 
-      // [SWITCH MODES]
+      // switch modes
+      if (ps2x.ButtonPressed(PSB_CROSS)) {
+        if (ControlMode != SINGLELEGMODE) {
+          ControlMode = (ControlMode + 1) % NUM_MODES;
+          if (ControlMode == WALKMODE) {
+            tone(SOUND_PIN, 333, 200);
+            delay(400);
+          }
+          tone(SOUND_PIN, 333, 200);
+        }
+      }
 
-//      //Translate mode
-//      if (ps2x.ButtonPressed(PSB_L1)) {// L1 Button Test
-//        MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
-//        if (ControlMode != TRANSLATEMODE)
-//          ControlMode = TRANSLATEMODE;
-//        else {
-//          if (g_InControlState.SelectedLeg == 255)
-//            ControlMode = WALKMODE;
-//          else
-//            ControlMode = SINGLELEGMODE;
-//        }
-//      }
-//
-//      //Rotate mode
-//      if (ps2x.ButtonPressed(PSB_L2)) {    // L2 Button Test
-//        MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
-//        if (ControlMode != ROTATEMODE)
-//          ControlMode = ROTATEMODE;
-//        else {
-//          if (g_InControlState.SelectedLeg == 255)
-//            ControlMode = WALKMODE;
-//          else
-//            ControlMode = SINGLELEGMODE;
-//        }
-//      }
-//
-      //Single leg mode fNO
-      if (ps2x.ButtonPressed(PSB_CIRCLE)) {// O - Circle Button Test
-        if (abs(g_InControlState.TravelLength.x) < cTravelDeadZone &&
-            abs(g_InControlState.TravelLength.z) < cTravelDeadZone
-            && abs(g_InControlState.TravelLength.y * 2) < cTravelDeadZone) {
-          //Sound SOUND_PIN,[50\4000]
+      // single leg mode
+      if (ps2x.ButtonPressed(PSB_CIRCLE)) {
+        if (!isTravel) {
+          tone(SOUND_PIN, 333, 200);
+          delay(400);
           if (ControlMode != SINGLELEGMODE) {
             ControlMode = SINGLELEGMODE;
-            if (g_InControlState.SelectedLeg == 255)  //Select leg if none is selected
-              g_InControlState.SelectedLeg = cRF; //Startleg
+            if (g_InControlState.SelectedLeg == 255) {
+              g_InControlState.SelectedLeg = cRF;
+            }
           } else {
             ControlMode = WALKMODE;
             g_InControlState.SelectedLeg = 255;
+            tone(SOUND_PIN, 333, 200);
           }
         }
       }
 
-      //[Common functions]
-      //Switch Balance mode on/off
-      if (ps2x.ButtonPressed(PSB_SQUARE)) { // Square Button Test
+      // Switch Balance mode on/off
+      if (ps2x.ButtonPressed(PSB_SQUARE)) {
+        tone(SOUND_PIN, 555, 200);
+        delay(400);
         g_InControlState.BalanceMode = !g_InControlState.BalanceMode;
-        if (g_InControlState.BalanceMode) {
-          MSound(SOUND_PIN, 1, 250, 1500);  //sound SOUND_PIN, [250\3000]
+        if (!g_InControlState.BalanceMode) {
+          tone(SOUND_PIN, 555, 200);
+        }
+        DBGSerial.print("balance mode: ");
+        DBGSerial.println(g_InControlState.BalanceMode);
+      }
+
+      // Stand up, sit down
+      if (ps2x.ButtonPressed(PSB_TRIANGLE)) {
+        if (g_BodyYOffset) {
+          g_BodyYOffset = 0;
         } else {
-          MSound(SOUND_PIN, 2, 100, 2000, 50, 4000);
+          g_BodyYOffset = 35;
         }
       }
-
-      //Stand up, sit down
-      if (ps2x.ButtonPressed(PSB_TRIANGLE)) { // Triangle - Button Test
-        if (g_BodyYOffset > 0)
-          g_BodyYOffset = 0;
-        else
-          g_BodyYOffset = 35;
+      if (ps2x.ButtonPressed(PSB_PAD_UP)) {
+        g_BodyYOffset += 10;
+      }
+      if (ps2x.ButtonPressed(PSB_PAD_DOWN)) {
+        g_BodyYOffset -= 10;
       }
 
-      if (ps2x.ButtonPressed(PSB_PAD_UP))// D-Up - Button Test
-        g_BodyYOffset += 10;
-
-      if (ps2x.ButtonPressed(PSB_PAD_DOWN))// D-Down - Button Test
-        g_BodyYOffset -= 10;
-
-      if (ps2x.ButtonPressed(PSB_PAD_RIGHT)) { // D-Right - Button Test
+      // speed control
+      if (ps2x.ButtonPressed(PSB_PAD_RIGHT)) {
         if (g_InControlState.SpeedControl > 0) {
           g_InControlState.SpeedControl = g_InControlState.SpeedControl - 50;
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          sound_effect(SOUND_EFFECT_SPEED_DOWN);
         }
       }
-
-      if (ps2x.ButtonPressed(PSB_PAD_LEFT)) { // D-Left - Button Test
+      if (ps2x.ButtonPressed(PSB_PAD_LEFT)) {
         if (g_InControlState.SpeedControl < 2000) {
           g_InControlState.SpeedControl = g_InControlState.SpeedControl + 50;
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          sound_effect(SOUND_EFFECT_SPEED_UP);
         }
       }
 
-      //[Walk functions]
+      // walk functions
       if (ControlMode == WALKMODE) {
-        //Switch gates
-        if (ps2x.ButtonPressed(PSB_SELECT)            // Select Button Test
-            && abs(g_InControlState.TravelLength.x) < cTravelDeadZone //No movement
-            && abs(g_InControlState.TravelLength.z) < cTravelDeadZone
-            && abs(g_InControlState.TravelLength.y * 2) < cTravelDeadZone) {
-          g_InControlState.GaitType = g_InControlState.GaitType + 1;                    // Go to the next gait...
-          if (g_InControlState.GaitType < NUM_GAITS) {                 // Make sure we did not exceed number of gaits...
-            MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
-          } else {
-            MSound(SOUND_PIN, 2, 50, 2000, 50, 2250);
-            g_InControlState.GaitType = 0;
+        // switch gates
+        if (ps2x.ButtonPressed(PSB_SELECT) && !isTravel) {
+          g_InControlState.GaitType = (g_InControlState.GaitType + 1) % NUM_GAITS;
+          if (g_InControlState.GaitType == 0) {
+            tone(SOUND_PIN, 666, 200);
+            delay(400);
           }
+          tone(SOUND_PIN, 666, 200);
           GaitSelect();
         }
 
         //Double leg lift height
         if (ps2x.ButtonPressed(PSB_R1)) { // R1 Button Test
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          tone(SOUND_PIN, 666, 200);
           DoubleHeightOn = !DoubleHeightOn;
           if (DoubleHeightOn)
             g_InControlState.LegLiftHeight = 80;
@@ -225,34 +174,32 @@ void InputController::ControlInput() {
 
         //Double Travel Length
         if (ps2x.ButtonPressed(PSB_R2)) {// R2 Button Test
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          tone(SOUND_PIN, 666, 200);
           DoubleTravelOn = !DoubleTravelOn;
         }
 
         // Switch between Walk method 1 && Walk method 2
         if (ps2x.ButtonPressed(PSB_R3)) { // R3 Button Test
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          tone(SOUND_PIN, 666, 200);
           WalkMethod = !WalkMethod;
         }
 
         //Walking
-        if (WalkMethod)  //(Walk Methode)
-          g_InControlState.TravelLength.z = (ps2x.Analog(PSS_RY) - 128); //Right Stick Up/Down
-
-        else {
+        if (WalkMethod) {
+          g_InControlState.TravelLength.z = (ps2x.Analog(PSS_RY) - 128);
+        } else {
           g_InControlState.TravelLength.x = -(ps2x.Analog(PSS_LX) - 128);
           g_InControlState.TravelLength.z = (ps2x.Analog(PSS_LY) - 128);
         }
 
-        if (!DoubleTravelOn) {  //(Double travel length)
+        if (!DoubleTravelOn) {
           g_InControlState.TravelLength.x = g_InControlState.TravelLength.x / 2;
           g_InControlState.TravelLength.z = g_InControlState.TravelLength.z / 2;
         }
-
-        g_InControlState.TravelLength.y = -(ps2x.Analog(PSS_RX) - 128) / 4; //Right Stick Left/Right
+        g_InControlState.TravelLength.y = -(ps2x.Analog(PSS_RX) - 128) / 4;
       }
 
-      //[Translate functions]
+      // translate mode
       g_BodyYShift = 0;
       if (ControlMode == TRANSLATEMODE) {
         g_InControlState.BodyPos.x = (ps2x.Analog(PSS_LX) - 128) / 2;
@@ -261,31 +208,33 @@ void InputController::ControlInput() {
         g_BodyYShift = (-(ps2x.Analog(PSS_RY) - 128) / 2);
       }
 
-      //[Rotate functions]
-      if (ControlMode == ROTATEMODE) {
+      // rotate mode
+      if (ControlMode == TILTMODE) {
         g_InControlState.BodyRot1.x = (ps2x.Analog(PSS_LY) - 128);
         g_InControlState.BodyRot1.y = (ps2x.Analog(PSS_RX) - 128) * 2;
         g_InControlState.BodyRot1.z = (ps2x.Analog(PSS_LX) - 128);
         g_BodyYShift = (-(ps2x.Analog(PSS_RY) - 128) / 2);
       }
 
-      //[Single leg functions]
+      // single leg
       if (ControlMode == SINGLELEGMODE) {
-        //Switch leg for single leg control
-        if (ps2x.ButtonPressed(PSB_SELECT)) { // Select Button Test
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+        if (ps2x.ButtonPressed(PSB_SELECT)) {
           g_InControlState.SelectedLeg = (g_InControlState.SelectedLeg + 1) % 6;
+          if (g_InControlState.SelectedLeg == 0) {
+            tone(SOUND_PIN, 666, 200);
+            delay(400);
+          }
+          tone(SOUND_PIN, 666, 200);
           DBGSerial.print("Selected leg: ");
           DBGSerial.println(g_InControlState.SelectedLeg);
         }
-
-        g_InControlState.SLLeg.x = (ps2x.Analog(PSS_LX) - 128) / 2; //Left Stick Right/Left
-        g_InControlState.SLLeg.y = (ps2x.Analog(PSS_RY) - 128) / 10; //Right Stick Up/Down
-        g_InControlState.SLLeg.z = (ps2x.Analog(PSS_LY) - 128) / 2; //Left Stick Up/Down
+        g_InControlState.SLLeg.x = (ps2x.Analog(PSS_LX) - 128) / 2;
+        g_InControlState.SLLeg.y = (ps2x.Analog(PSS_RY) - 128) / 10;
+        g_InControlState.SLLeg.z = (ps2x.Analog(PSS_LY) - 128) / 2;
 
         // Hold single leg in place
         if (ps2x.ButtonPressed(PSB_R2)) { // R2 Button Test
-          MSound(SOUND_PIN, 1, 50, 2000);  //sound SOUND_PIN, [50\4000]
+          tone(SOUND_PIN, 777, 500);
           g_InControlState.fSLHold = !g_InControlState.fSLHold;
         }
       }
@@ -305,10 +254,11 @@ void InputController::ControlInput() {
     g_InControlState.BodyPos.y = max(g_BodyYOffset + g_BodyYShift, 0);
   } else {
     // We may have lost the PS2... See what we can do to recover...
-    if (g_sPS2ErrorCnt < MAXPS2ERRORCNT)
-      g_sPS2ErrorCnt++;    // Increment the error count and if to many errors, turn off the robot.
-    else if (g_InControlState.fHexOn)
+    if (g_sPS2ErrorCnt < MAXPS2ERRORCNT) {
+      g_sPS2ErrorCnt++;
+    } else if (g_InControlState.fHexOn) {
       PS2TurnRobotOff();
+    }
   }
 }
 

@@ -7,7 +7,7 @@
 | Control     | Description
 | ----------- | -------------
 | **START**   | Turn bot on/off 
-| **MODE**    | Toggle mode: `walk` -> `shift` -> `rotate`  
+| **X**       | Toggle mode: `walk` -> `shift` -> `tilt`  
 | **L1**      | Open Mandibles 
 | **L2**      | Close Mandibles 
 | **L2+LEFT** | Decrease gripper torque
@@ -40,12 +40,12 @@
 | **Right Stick** | Shift body Y and rotate body Y |
 
 
-### Rotate Controls
+### Tilt Controls
 
 | Control       | Description |
 | ------------- | ------------- |
-| **Left Stick** | Rotate body X/Z |
-| **Right Stick** | Rotate body Y |
+| **Left Stick** | Tilt body X/Z |
+| **Right Stick** | Tilt body Y |
 
 
 ### Single Leg Controls

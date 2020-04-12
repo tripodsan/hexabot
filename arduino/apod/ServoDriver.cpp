@@ -169,7 +169,7 @@ void ServoDriver::FreeServos() {
 #ifdef OPT_SSC_FORWARDER
 
 void ServoDriver::SSCForwarder() {
-  MSound(SOUND_PIN, 1, 1000, 2000);  //sound SOUND_PIN, [50\4000]
+  tone(SOUND_PIN, 440, 2000);
   delay(2000);
   int sChar;
   int sPrevChar;

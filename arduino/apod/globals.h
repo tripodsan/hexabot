@@ -103,13 +103,6 @@ extern byte			InputTimeDelay;	//Delay that depends on the input to get the "snea
 extern word			SpeedControl;	//Adjustible Delay
 #endif
 
-
-extern void MSound(uint8_t _pin, byte cNotes, ...);
-//extern int DBGPrintf(const char *format, ...);
-//extern int SSCPrintf(const char *format, ...);
-
-
-// The defined controller must provide the following
 extern void InitController();
 
 extern void ControlInput();

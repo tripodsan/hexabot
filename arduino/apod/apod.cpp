@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include "globals.h"
 #include "PS2Support.h"
-#include "pitches.h"
+#include "sound.h"
 
 #define BalanceDivFactor 6    //;Other values than 6 can be used, testing...CAUTION!! At your own risk ;)
 
@@ -92,9 +92,6 @@ const short cInitPosZ[] PROGMEM = {cRRInitPosZ, cRMInitPosZ, cRFInitPosZ, cLRIni
 boolean g_fShowDebugPrompt;
 boolean g_fDebugOutput = true;
 
-//--------------------------------------------------------------------
-//[REMOTE]
-#define cTravelDeadZone         4    //The deadzone for the analog input from the remote
 //====================================================================
 //[ANGLES]
 short CoxaAngle1[6];    //Actual Angle of the horizontal hip, decimals = 1
@@ -270,47 +267,6 @@ void DBGSeparator() {
   DBGSerial.println();
 }
 
-long noteStart = 0;
-long noteDur = 0;
-const int* noteTrack = nullptr;
-
-void music_update() {
-  if (!noteTrack) {
-    return;
-  }
-  long now = millis();
-  long delta = now - noteStart;
-  if (delta < noteDur) {
-    return;
-  }
-  int freq = *(noteTrack++);
-  if (freq < 0) {
-    noteTrack = nullptr;
-    return;
-  }
-  noteStart = now;
-  noteDur = *(noteTrack++);
-  tone(SOUND_PIN, freq, noteDur);
-}
-
-void music_play(const int notes[]) {
-  noteTrack = notes;
-  noteStart = 0;
-  noteDur = 0;
-  music_update();
-}
-
-void music_wait(unsigned long duration) {
-  unsigned long start = millis();
-  do {
-    music_update();
-    delay(5);
-  } while (millis() - start < duration);
-}
-
-const int TUNE_SHUTDOWN[] = { NOTE_C5, 200, NOTE_G4, 100, NOTE_G4, 100, NOTE_A4, 200, NOTE_G4, 200, NOTE_OFF, 200, NOTE_B4, 200, NOTE_C5, 200, -1 };
-const int TUNE_STARTUP[] = { NOTE_C4, 200, NOTE_E4, 200, NOTE_G4, 200, NOTE_B4, 200, NOTE_OFF, 200, NOTE_B4, 200, NOTE_C5, 200, -1 };
-
 //--------------------------------------------------------------------------
 // SETUP: the main arduino setup function.
 //--------------------------------------------------------------------------
@@ -427,11 +383,7 @@ void PowerUp() {
   g_ServoDriver.CommitServoDriver(ServoMoveTime);
   UpdateNonLegServos();
 
-  // play boot up tune
-  for (int f = 440; f < 880; f += 10) {
-    tone(SOUND_PIN, f, 10);
-    delay(10);
-  }
+  sound_effect(SOUND_EFFECT_POWER_UP);
   DBGSerial.println(F("Ready for action!"));
 }
 
@@ -449,11 +401,7 @@ void PowerDown() {
   UpdateNonLegServos();
 
   // play power down tune
-  for (int f = 880; f > 440; f -= 10) {
-    tone(SOUND_PIN, f, 10);
-    delay(10);
-  }
-  delay(200);
+  sound_effect(SOUND_EFFECT_POWER_DOWN);
   DBGSerial.println(F("Goodbye."));
 
   // and turn servos off.
@@ -542,9 +490,7 @@ void ActiveLoop() {
   CheckAngles();
 
   //Calculate Servo Move time
-  if ((abs(g_InControlState.TravelLength.x) > cTravelDeadZone) ||
-      (abs(g_InControlState.TravelLength.z) > cTravelDeadZone) ||
-      (abs(g_InControlState.TravelLength.y * 2) > cTravelDeadZone)) {
+  if (isTravel) {
     ServoMoveTime = NomGaitSpeed + (g_InControlState.InputTimeDelay * 2) + g_InControlState.SpeedControl;
 
     //Add additional delay when Balance mode is on
@@ -735,7 +681,8 @@ void GaitSelect() {
   //Gait selector
   switch (g_InControlState.GaitType) {
     case 0:
-      //Ripple Gait 12 steps
+      // ripple Gait 12 steps
+      DBGSerial.println(F("Gait: ripple 12"));
       GaitLegNr[cLR] = 1;
       GaitLegNr[cRF] = 3;
       GaitLegNr[cLM] = 5;
@@ -750,7 +697,8 @@ void GaitSelect() {
       NomGaitSpeed = 70;
       break;
     case 1:
-      //Tripod 8 steps
+      DBGSerial.println(F("Gait: tripod 8"));
+      // Tripod 8 steps
       GaitLegNr[cLR] = 5;
       GaitLegNr[cRF] = 1;
       GaitLegNr[cLM] = 1;
@@ -765,7 +713,8 @@ void GaitSelect() {
       NomGaitSpeed = 70;
       break;
     case 2:
-      //Triple Tripod 12 step
+      DBGSerial.println(F("Gait: tripod 12"));
+      // triple Tripod 12 step
       GaitLegNr[cRF] = 3;
       GaitLegNr[cLM] = 4;
       GaitLegNr[cRR] = 5;
@@ -780,6 +729,7 @@ void GaitSelect() {
       NomGaitSpeed = 60;
       break;
     case 3:
+      DBGSerial.println(F("Gait: tripod 16/5"));
       // Triple Tripod 16 steps, use 5 lifted positions
       GaitLegNr[cRF] = 4;
       GaitLegNr[cLM] = 5;
@@ -795,6 +745,7 @@ void GaitSelect() {
       NomGaitSpeed = 60;
       break;
     case 4:
+      DBGSerial.println(F("Gait: wave"));
       //Wave 24 steps
       GaitLegNr[cLR] = 1;
       GaitLegNr[cRF] = 21;
@@ -820,27 +771,26 @@ void GaitSeq() {
   TravelRequest = ((abs(g_InControlState.TravelLength.x) > cTravelDeadZone) ||
                    (abs(g_InControlState.TravelLength.z) > cTravelDeadZone) ||
                    (abs(g_InControlState.TravelLength.y) > cTravelDeadZone));
-  if (NrLiftedPos == 5)
+  if (NrLiftedPos == 5) {
     LiftDivFactor = 4;
-  else
+  } else {
     LiftDivFactor = 2;
+  }
 
   //Calculate Gait sequence
   LastLeg = 0;
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) { // for all legs
-    if (LegIndex == 5) // last leg
+    if (LegIndex == 5) {
       LastLeg = 1;
-
+    }
     Gait(LegIndex);
-  }    // next leg
+  }
 }
 
 
 //--------------------------------------------------------------------
 //[GAIT]
 void Gait(byte GaitCurrentLegNr) {
-
-
   //Clear values under the cTravelDeadZone
   if (!TravelRequest) {
     g_InControlState.TravelLength.x = 0;
@@ -1281,21 +1231,6 @@ void SoundNoTimer(uint8_t _pin, unsigned long duration, unsigned int frequency) 
   }
   *pin_port &= ~(pin_mask);  // keep pin low after stop
 
-}
-
-void MSound(uint8_t _pin, byte cNotes, ...) {
-  va_list ap;
-  unsigned int uDur;
-  unsigned int uFreq;
-  va_start(ap, cNotes);
-
-  while (cNotes > 0) {
-    uDur = va_arg(ap, unsigned int);
-    uFreq = va_arg(ap, unsigned int);
-    SoundNoTimer(_pin, uDur, uFreq);
-    cNotes--;
-  }
-  va_end(ap);
 }
 
 #ifdef OPT_TERMINAL_MONITOR

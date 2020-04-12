@@ -14,6 +14,12 @@
 
 #include <Arduino.h>
 
+#define cTravelDeadZone 4      //The deadzone for the analog input from the remote
+#define isTravel (abs(g_InControlState.TravelLength.x) > cTravelDeadZone || \
+                  abs(g_InControlState.TravelLength.z) > cTravelDeadZone || \
+                  abs(g_InControlState.TravelLength.y * 2) > cTravelDeadZone)
+
+
 class InputController {
 public:
   void Init();
