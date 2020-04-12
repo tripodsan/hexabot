@@ -31,7 +31,6 @@ static byte ControlMode;
 static byte PrevControlMode;
 static bool DoubleHeightOn;
 static bool DoubleTravelOn;
-static bool WalkMethod;
 
 void PS2TurnRobotOff();
 
@@ -44,7 +43,6 @@ void InputController::Init() {
   PrevControlMode = WALKMODE;
   DoubleHeightOn = false;
   DoubleTravelOn = false;
-  WalkMethod = false;
 
   g_InControlState.SpeedControl = 100;
 }
@@ -128,12 +126,6 @@ void InputController::ControlInput() {
           g_BodyYOffset = 35;
         }
       }
-      if (ps2x.ButtonPressed(PSB_PAD_UP)) {
-        g_BodyYOffset += 10;
-      }
-      if (ps2x.ButtonPressed(PSB_PAD_DOWN)) {
-        g_BodyYOffset -= 10;
-      }
 
       // speed control
       if (ps2x.ButtonPressed(PSB_PAD_RIGHT)) {
@@ -150,7 +142,35 @@ void InputController::ControlInput() {
       }
 
       // walk functions
-      if (ControlMode == WALKMODE) {
+      if (ControlMode == WALKMODE && ps2x.Button(PSB_R1)) {
+        if (ps2x.ButtonPressed(PSB_L3)) {
+          g_InControlState.HeadAnglePan = 0;
+          g_InControlState.HeadAngleTilt = 0;
+          g_InControlState.HeadAngleRot = 0;
+        } else {
+          g_InControlState.HeadAnglePan -= (ps2x.Analog(PSS_LX) - 127) / 4;
+          g_InControlState.HeadAnglePan = min(max(g_InControlState.HeadAnglePan, cHeadPanMin1), cHeadPanMax1);
+
+          g_InControlState.HeadAngleTilt -= (ps2x.Analog(PSS_LY) - 127) / 4;
+          g_InControlState.HeadAngleTilt = min(max(g_InControlState.HeadAngleTilt, cHeadTiltMin1), cHeadTiltMax1);
+
+          g_InControlState.HeadAngleRot -= (ps2x.Analog(PSS_RX) - 127) / 4;
+          g_InControlState.HeadAngleRot = min(max(g_InControlState.HeadAngleRot, cHeadRotMin1), cHeadRotMax1);
+        }
+      }
+      else if (ControlMode == WALKMODE && ps2x.Button(PSB_R2)) {
+        if (ps2x.ButtonPressed(PSB_L3)) {
+          g_InControlState.TailAnglePan = 0;
+          g_InControlState.TailAngleTilt = 0;
+        } else {
+          g_InControlState.TailAnglePan -= (ps2x.Analog(PSS_LX) - 127) / 4;
+          g_InControlState.TailAnglePan = min(max(g_InControlState.TailAnglePan, cTailPanMin1), cTailPanMax1);
+
+          g_InControlState.TailAngleTilt -= (ps2x.Analog(PSS_LY) - 127) / 4;
+          g_InControlState.TailAngleTilt = min(max(g_InControlState.TailAngleTilt, cTailTiltMin1), cTailTiltMax1);
+        }
+      }
+      else if (ControlMode == WALKMODE) {
         // switch gates
         if (ps2x.ButtonPressed(PSB_SELECT) && !isTravel) {
           g_InControlState.GaitType = (g_InControlState.GaitType + 1) % NUM_GAITS;
@@ -163,34 +183,27 @@ void InputController::ControlInput() {
         }
 
         //Double leg lift height
-        if (ps2x.ButtonPressed(PSB_R1)) { // R1 Button Test
-          tone(SOUND_PIN, 666, 200);
-          DoubleHeightOn = !DoubleHeightOn;
-          if (DoubleHeightOn)
-            g_InControlState.LegLiftHeight = 80;
-          else
-            g_InControlState.LegLiftHeight = 50;
-        }
-
-        //Double Travel Length
-        if (ps2x.ButtonPressed(PSB_R2)) {// R2 Button Test
-          tone(SOUND_PIN, 666, 200);
-          DoubleTravelOn = !DoubleTravelOn;
-        }
-
-        // Switch between Walk method 1 && Walk method 2
-        if (ps2x.ButtonPressed(PSB_R3)) { // R3 Button Test
-          tone(SOUND_PIN, 666, 200);
-          WalkMethod = !WalkMethod;
-        }
+//        if (ps2x.ButtonPressed(PSB_R1)) { // R1 Button Test
+//          tone(SOUND_PIN, 666, 200);
+//          DoubleHeightOn = !DoubleHeightOn;
+//          if (DoubleHeightOn)
+//            g_InControlState.LegLiftHeight = 80;
+//          else
+//            g_InControlState.LegLiftHeight = 50;
+//        }
+//
+//        //Double Travel Length
+//        if (ps2x.ButtonPressed(PSB_R2)) {// R2 Button Test
+//          tone(SOUND_PIN, 666, 200);
+//          DoubleTravelOn = !DoubleTravelOn;
+//        }
 
         //Walking
-        if (WalkMethod) {
-          g_InControlState.TravelLength.z = (ps2x.Analog(PSS_RY) - 128);
-        } else {
-          g_InControlState.TravelLength.x = -(ps2x.Analog(PSS_LX) - 128);
-          g_InControlState.TravelLength.z = (ps2x.Analog(PSS_LY) - 128);
-        }
+        g_InControlState.TravelLength.x = -(ps2x.Analog(PSS_LX) - 128);
+        g_InControlState.TravelLength.z = (ps2x.Analog(PSS_LY) - 128);
+
+        g_BodyYOffset += (ps2x.Analog(PSS_RY) - 127) / 3;
+        g_BodyYOffset = min(max(g_BodyYOffset, 0), 100);
 
         if (!DoubleTravelOn) {
           g_InControlState.TravelLength.x = g_InControlState.TravelLength.x / 2;

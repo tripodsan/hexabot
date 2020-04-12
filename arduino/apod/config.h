@@ -148,12 +148,12 @@
 #define cMandibleMax1    900
 #define wMandibleInc      40  // mandible increment
 #define wMandibleTime     10  // mandible update time
-#define cHeadPanMin1    -500
-#define cHeadPanMax1     500
-#define cHeadTiltMin1   -500
-#define cHeadTiltMax1    500
-#define cHeadRotMin1    -500
-#define cHeadRotMax1     500
+#define cHeadPanMin1    -380
+#define cHeadPanMax1     380
+#define cHeadTiltMin1   -370
+#define cHeadTiltMax1    470
+#define cHeadRotMin1    -900
+#define cHeadRotMax1     900
 
 #define cTailPanMin1    -500
 #define cTailPanMax1     500

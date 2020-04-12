@@ -15,21 +15,24 @@
 | **O**       | Toggle single leg mode 
 | **[]**      | Toggle balance mode 
 | **/\\**     | Move body 35mm from the ground and back. 
-| **UP**      | Body up 10 mm 
-| **DOWN**    | Body down 10 mm 
+| **UP**      |  
+| **DOWN**    |  
 | **LEFT**    | Decrease speed with 50mS 
-| **RIGHT**   | Increase speed with 50mS 
-
+| **RIGHT**   | Increase speed with 50mS
+| **R1+Left Stick** | Pan / Tilt Head
+| **R1+Right Stick** | Rotate Head
+| **R1+L3** | Center Head
 
 ### Walk Controls
 
-| Control         | Mode 1 | Mode 2 |
-| --------------- | ------------- | --------- |
-| **SELECT**      | Switch gaits ||
-| **R1**          | Toggle Double gait travel speed  ||
-| **R2**          | Toggle Double gait travel length ||
-| **Left Stick**  | Walk / Strafe | n/a |
-| **Right Stick** | Rotate | Walk / rotate |
+| Control         | Mode 1 |
+| --------------- | ------------- |
+| **SELECT**      | Switch gaits |
+| **R1**          | Toggle Double gait travel speed  |
+| **R2**          | Toggle Double gait travel length |
+| **Left Stick**  | Walk / Strafe |
+| **Right Stick L-R** | Rotate |
+| **Right Stick U-D** | Body up/down |
 
 
 ### Shift Controls

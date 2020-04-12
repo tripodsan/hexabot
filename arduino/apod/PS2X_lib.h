@@ -173,7 +173,7 @@ class PS2X {
 public:
   boolean Button(uint16_t);                //will be TRUE if button is being pressed
 
-  unsigned int ButtonDataByte();
+  uint16_t ButtonDataByte();
 
   boolean NewButtonState();
 
@@ -184,17 +184,17 @@ public:
 
   boolean read_gamepad(boolean, byte);
 
-  byte readType();
+  uint8_t readType();
 
-  byte config_gamepad(uint8_t, uint8_t, uint8_t, uint8_t);
+  uint8_t config_gamepad(uint8_t, uint8_t, uint8_t, uint8_t);
 
-  byte config_gamepad(uint8_t, uint8_t, uint8_t, uint8_t, bool, bool);
+  uint8_t config_gamepad(uint8_t, uint8_t, uint8_t, uint8_t, bool, bool);
 
   void enableRumble();
 
   bool enablePressures();
 
-  byte Analog(byte);
+  uint8_t Analog(byte);
 
   void reconfig_gamepad();
 
@@ -213,15 +213,15 @@ private:
 
   inline bool DAT_CHK();
 
-  unsigned char _gamepad_shiftinout(char);
+  uint8_t _gamepad_shiftinout(char);
 
-  unsigned char PS2data[21];
+  uint8_t PS2data[21];
 
   void sendCommandString(byte *, byte);
 
-  unsigned int last_buttons;
+  uint16_t last_buttons;
 
-  unsigned int buttons;
+  uint16_t buttons;
 
 #ifdef __AVR__
   uint8_t _clk_mask;

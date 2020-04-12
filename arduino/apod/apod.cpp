@@ -236,6 +236,10 @@ extern void CheckAngles();
 
 extern void UpdateMandibles();
 
+extern void UpdateHead();
+
+extern void UpdateTail();
+
 extern void BalCalcOneLeg(short PosX, short PosZ, short PosY, byte BalLegNr);
 
 extern void BodyFK(short PosX, short PosZ, short PosY, short RotationY, byte BodyIKLeg);
@@ -393,6 +397,9 @@ void PowerDown() {
     FemurAngle1[LegIndex] = (short) pgm_read_word(&cFemurMin1[LegIndex]);
     TibiaAngle1[LegIndex] = (short) pgm_read_word(&cTibiaMin1[LegIndex]);
   }
+  UpdateHead();
+  UpdateTail();
+  UpdateMandibles();
 
   // last update...
   ServoMoveTime = 600;
@@ -432,6 +439,8 @@ void ActiveLoop() {
 
   // Mandibles
   UpdateMandibles();
+  UpdateHead();
+  UpdateTail();
   UpdateNonLegServos();
 
   //Balance calculations
@@ -630,6 +639,18 @@ void UpdateMandibles() {
   }
   MandibleAngle = min(max(MandibleAngle + inc, cMandibleMin1), cMandibleMax1);
 }
+
+void UpdateHead() {
+  HeadAnglePan = g_InControlState.HeadAnglePan;
+  HeadAngleTilt = g_InControlState.HeadAngleTilt;
+  HeadAngleRot = g_InControlState.HeadAngleRot;
+}
+
+void UpdateTail() {
+  TailAnglePan = g_InControlState.TailAnglePan;
+  TailAngleTilt = g_InControlState.TailAngleTilt;
+}
+
 
 //--------------------------------------------------------------------
 //[SINGLE LEG CONTROL]

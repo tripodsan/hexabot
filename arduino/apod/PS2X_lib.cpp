@@ -44,17 +44,17 @@ boolean PS2X::Button(uint16_t button) {
 }
 
 /****************************************************************************************/
-unsigned int PS2X::ButtonDataByte() {
+uint16_t PS2X::ButtonDataByte() {
   return (~buttons);
 }
 
 /****************************************************************************************/
-byte PS2X::Analog(byte button) {
+uint8_t PS2X::Analog(byte button) {
   return PS2data[button];
 }
 
 /****************************************************************************************/
-unsigned char PS2X::_gamepad_shiftinout(char byte) {
+uint8_t PS2X::_gamepad_shiftinout(char byte) {
   unsigned char tmp = 0;
   for (unsigned char i = 0; i < 8; i++) {
     if (CHK(byte, i)) CMD_SET();
@@ -161,12 +161,12 @@ boolean PS2X::read_gamepad(boolean motor1, byte motor2) {
 }
 
 /****************************************************************************************/
-byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat) {
+uint8_t PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat) {
   return config_gamepad(clk, cmd, att, dat, false, false);
 }
 
 /****************************************************************************************/
-byte PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bool pressures, bool rumble) {
+uint8_t PS2X::config_gamepad(uint8_t clk, uint8_t cmd, uint8_t att, uint8_t dat, bool pressures, bool rumble) {
   byte temp[sizeof(type_read)];
 
 #ifdef __AVR__
@@ -329,7 +329,7 @@ void PS2X::sendCommandString(byte string[], byte len) {
 }
 
 /****************************************************************************************/
-byte PS2X::readType() {
+uint8_t PS2X::readType() {
 #ifdef PS2X_DEBUG
   Serial.print(F("Controller_type: "));
   Serial.println(controller_type, HEX);

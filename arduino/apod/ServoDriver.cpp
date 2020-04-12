@@ -82,9 +82,9 @@ void ServoDriver::OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short 
 //[OutputServoInfoForHead] Do the output to the SSC-32 for the head servos (w/o mandibles)
 //------------------------------------------------------------------------------------------
 void ServoDriver::OutputServoInfoHead(short pan, short tilt, short rot) {
-  uint16_t wPanSSCV = ((long) (-pan + 900)) * 1000 / cPwmDiv + cPFConst;
-  uint16_t wTiltSSCV = ((long) (-tilt + 900)) * 1000 / cPwmDiv + cPFConst;
-  uint16_t wRotSSCV = ((long) (-rot + 900)) * 1000 / cPwmDiv + cPFConst;
+  uint16_t wPanSSCV = DEG2PWM(pan);
+  uint16_t wTiltSSCV = DEG2PWM(tilt);
+  uint16_t wRotSSCV = DEG2PWM(rot);
 
   SSCSerial.write(cHeadPanPin  + 0x80);
   SSCSerial.write(wPanSSCV >> 8);
@@ -122,8 +122,10 @@ void ServoDriver::OutputServoInfoTail(short pan, short tilt) {
  * @param right Right mandible angle in degrees. (1 decimal)
  */
 void ServoDriver::OutputServoInfoMandibles(short left, short right) {
-  uint16_t wLeftSSCV = ((long) (-left + 900)) * 1000 / cPwmDiv + cPFConst;
-  uint16_t wRightSSCV = ((long) (-right + 900)) * 1000 / cPwmDiv + cPFConst;
+//  uint16_t wLeftSSCV = ((long) (-left + 900)) * 1000 / cPwmDiv + cPFConst;
+//  uint16_t wRightSSCV = ((long) (-right + 900)) * 1000 / cPwmDiv + cPFConst;
+  uint16_t wLeftSSCV = DEG2PWM(-left);
+  uint16_t wRightSSCV = DEG2PWM(-right);
 
   SSCSerial.write(cLMandPin  + 0x80);
   SSCSerial.write(wLeftSSCV >> 8u);
