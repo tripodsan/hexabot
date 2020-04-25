@@ -65,40 +65,45 @@
 #define cSSC_OUT       12  // Output pin for Botboard - Input of SSC32 (RX red)
 #define cSSC_IN        13  // Input pin for Botboard - Output of SSC32 (TX yellow)
 
+#define cSSC_ADC_VOLT  'A' // Voltage ADC Pin
+#define fTurnOffVol     5.0f
+#define fTurnOnVol      6.0f
+#define fMaxVol         10.0f // sometimes the sensor is wrong...!?!
+
 //====================================================================
 //[SSC PIN NUMBERS]
-#define cRRCoxaPin      28  // Rear Right leg Hip Horizontal
-#define cRRFemurPin     29  // Rear Right leg Hip Vertical
-#define cRRTibiaPin     30  // Rear Right leg Knee
+#define cRRCoxaPin       2  // Rear Right leg Hip Horizontal
+#define cRRFemurPin      1  // Rear Right leg Hip Vertical
+#define cRRTibiaPin      0  // Rear Right leg Knee
 
-#define cRMCoxaPin      20  // Middle Right leg Hip Horizontal
-#define cRMFemurPin     21  // Middle Right leg Hip Vertical
-#define cRMTibiaPin     22  // Middle Right leg Knee
+#define cRMCoxaPin       5  // Middle Right leg Hip Horizontal
+#define cRMFemurPin      6  // Middle Right leg Hip Vertical
+#define cRMTibiaPin      4  // Middle Right leg Knee
 
-#define cRFCoxaPin      16  // Front Right leg Hip Horizontal
-#define cRFFemurPin     17  // Front Right leg Hip Vertical
-#define cRFTibiaPin     18  // Front Right leg Knee
+#define cRFCoxaPin      13  // Front Right leg Hip Horizontal
+#define cRFFemurPin     14  // Front Right leg Hip Vertical
+#define cRFTibiaPin     15  // Front Right leg Knee
 
-#define cLRCoxaPin      12  // Rear Left leg Hip Horizontal
-#define cLRFemurPin     13  // Rear Left leg Hip Vertical
-#define cLRTibiaPin     14  // Rear Left leg Knee
+#define cLRCoxaPin      18  // Rear Left leg Hip Horizontal
+#define cLRFemurPin     17  // Rear Left leg Hip Vertical
+#define cLRTibiaPin     16  // Rear Left leg Knee
 
-#define cLMCoxaPin      4   // Middle Left leg Hip Horizontal
-#define cLMFemurPin     5   // Middle Left leg Hip Vertical
-#define cLMTibiaPin     6   // Middle Left leg Knee
+#define cLMCoxaPin      21  // Middle Left leg Hip Horizontal
+#define cLMFemurPin     22  // Middle Left leg Hip Vertical
+#define cLMTibiaPin     23  // Middle Left leg Knee
 
-#define cLFCoxaPin      0   // Front Left leg Hip Horizontal
-#define cLFFemurPin     1   // Front Left leg Hip Vertical
-#define cLFTibiaPin     2   // Front Left leg Knee
+#define cLFCoxaPin      29  // Front Left leg Hip Horizontal
+#define cLFFemurPin     30  // Front Left leg Hip Vertical
+#define cLFTibiaPin     31  // Front Left leg Knee
 
-#define cLMandPin       10  // Left Mandible
-#define cRMandPin        9  // Right Mandible
-#define cHeadPanPin     11  // Head Pan (horizontal)
-#define cHeadTiltPin     8  // Head Tilt (vertical)
-#define cHeadRotPin     26  // Head Rotate
+#define cLMandPin       26  // Left Mandible
+#define cRMandPin       27  // Right Mandible
+#define cHeadPanPin     24  // Head Pan (horizontal)
+#define cHeadTiltPin    25  // Head Tilt (vertical)
+#define cHeadRotPin     11  // Head Rotate
 
-#define cTailPanPin     24  // Tail Pan (horizontal)
-#define cTailTiltPin    25  // Tail Tilt (vertical)
+#define cTailPanPin     10  // Tail Pan (horizontal)
+#define cTailTiltPin     9  // Tail Tilt (vertical)
 
 //--------------------------------------------------------------------
 //[MIN/MAX ANGLES]

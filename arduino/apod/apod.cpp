@@ -361,10 +361,12 @@ void apod_loop() {
   //Read input
   CheckVoltage();        // check our voltages...
 
-  if (!g_fLowVoltageShutdown) {
 #ifdef USEPS2
-    g_InputController.ControlInput();
+  g_InputController.ControlInput();
 #endif
+
+  if (g_fLowVoltageShutdown) {
+    g_InControlState.fHexOn = false;
   }
 
   if (g_InControlState.fHexOn) {
@@ -382,6 +384,9 @@ void apod_loop() {
 }
 
 void PowerUp() {
+  g_InputController.Reset();
+  g_InControlState.fHexOn = true;
+
   ServoMoveTime = 600;
   UpdateLegServos();
   g_ServoDriver.CommitServoDriver(ServoMoveTime);
@@ -392,6 +397,9 @@ void PowerUp() {
 }
 
 void PowerDown() {
+  g_InputController.Reset();
+
+  // reset legs
   for (LegIndex = 0; LegIndex <= 5; LegIndex++) {
     CoxaAngle1[LegIndex] = 0;
     FemurAngle1[LegIndex] = (short) pgm_read_word(&cFemurMin1[LegIndex]);
@@ -568,50 +576,32 @@ void UpdateNonLegServos() {
 //--------------------------------------------------------------------
 //[CHECK VOLTAGE]
 //Reads the input voltage and shuts down the bot when the power drops
-byte s_bLVBeepCnt;
 
 bool CheckVoltage() {
-#ifdef  cVoltagePin
-#ifdef cTurnOffVol
-  Voltage = analogRead(cVoltagePin); // Battery voltage
-  Voltage = ((long)Voltage*1955)/1000;
-
-  if (!g_fLowVoltageShutdown) {
-      if ((Voltage < cTurnOffVol) || (Voltage >= 1999)) {
-#ifdef DBGSerial
-          DBGSerial.println("Voltage went low, turn off robot");
-#endif
-     //Turn off
-    g_InControlState.BodyPos.x = 0;
-    g_InControlState.BodyPos.y = 0;
-    g_InControlState.BodyPos.z = 0;
-    g_InControlState.BodyRot1.x = 0;
-    g_InControlState.BodyRot1.y = 0;
-    g_InControlState.BodyRot1.z = 0;
-    g_InControlState.TravelLength.x = 0;
-    g_InControlState.TravelLength.z = 0;
-    g_InControlState.TravelLength.y = 0;
-    g_InControlState.SelectedLeg = 255;
-    g_fLowVoltageShutdown = 1;
-          s_bLVBeepCnt = 0;    // how many times we beeped...
-    g_InControlState.fHexOn = false;
-}
-#ifdef cTurnOnVol
-  } else if ((Voltage > cTurnOnVol) && (Voltage < 1999)) {
-#ifdef DBGSerial
-          DBGSerial.println("Voltage restored");
-#endif
-          g_fLowVoltageShutdown = 0;
-
-#endif
-  } else {
-      if (s_bLVBeepCnt < 5) {
-        s_bLVBeepCnt++;
-        MSound(SOUND_PIN, 1, 45, 2000);
-      }
-      delay(2000);
+#ifdef cSSC_ADC_VOLT
+  float v = g_ServoDriver.ReadVoltage();
+  if (v <= 0) {
+    return false;
   }
-#endif
+  if (!g_fLowVoltageShutdown) {
+      if (v < fTurnOffVol) {
+        DBGSerial.print(F("Voltage went low "));
+        DBGSerial.print(v);
+        DBGSerial.println(F("v, turn off robot"));
+        g_fLowVoltageShutdown = true;
+        sound_effect(SOUND_EFFECT_VOLTAGE_LOW);
+        delay(1000);
+      }
+  } else {
+    if (v > fTurnOnVol && v < fMaxVol) {
+      DBGSerial.print(F("Voltage restored: "));
+      DBGSerial.print(v);
+      DBGSerial.println(F("v"));
+      g_fLowVoltageShutdown = false;
+      sound_effect(SOUND_EFFECT_VOLTAGE_OK);
+      delay(1000);
+    }
+  }
 #endif
   return g_fLowVoltageShutdown;
 }
@@ -1213,45 +1203,6 @@ void CheckAngles() {
     TibiaAngle1[LegIndex] = min(max(TibiaAngle1[LegIndex], (short) pgm_read_word(&cTibiaMin1[LegIndex])),
                                 (short) pgm_read_word(&cTibiaMax1[LegIndex]));
   }
-}
-
-
-
-// BUGBUG:: Move to some library...
-//==============================================================================
-//    SoundNoTimer - Quick and dirty tone function to try to output a frequency
-//            to a speaker for some simple sounds.
-//==============================================================================
-void SoundNoTimer(uint8_t _pin, unsigned long duration, unsigned int frequency) {
-#ifdef __AVR__
-  volatile uint8_t *pin_port;
-  volatile uint8_t pin_mask;
-#else
-  volatile uint32_t *pin_port;
-    volatile uint16_t pin_mask;
-#endif
-  long toggle_count = 0;
-  long lusDelayPerHalfCycle;
-
-  // Set the pinMode as OUTPUT
-  pinMode(_pin, OUTPUT);
-
-  pin_port = portOutputRegister(digitalPinToPort(_pin));
-  pin_mask = digitalPinToBitMask(_pin);
-
-  toggle_count = 2 * frequency * duration / 1000;
-  lusDelayPerHalfCycle = 1000000L / (frequency * 2);
-
-  // if we are using an 8 bit timer, scan through prescalars to find the best fit
-  while (toggle_count--) {
-    // toggle the pin
-    *pin_port ^= pin_mask;
-
-    // delay a half cycle
-    delayMicroseconds(lusDelayPerHalfCycle);
-  }
-  *pin_port &= ~(pin_mask);  // keep pin low after stop
-
 }
 
 #ifdef OPT_TERMINAL_MONITOR

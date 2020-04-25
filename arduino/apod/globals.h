@@ -109,7 +109,6 @@ extern void ControlInput();
 
 extern void AllowControllerInterrupts(boolean fAllow);
 
-
 extern bool CheckVoltage();
 
 // debug handler...

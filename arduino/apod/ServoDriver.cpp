@@ -17,12 +17,9 @@ SoftwareSerial SSCSerial(cSSC_IN, cSSC_OUT);
 #endif
 #endif
 
-//=============================================================================
-// Global - Local to this file only...
-//=============================================================================
-
 // definition of some helper functions
 extern int SSCRead(byte *pb, int cb, word wTimeout, word wEOL);
+int SSCReadByte(word wTimeout);
 
 //--------------------------------------------------------------------
 //Init
@@ -43,6 +40,23 @@ void ServoDriver::Init() {
     DBGSerial.print("n/a");
   }
   DBGSerial.println();
+}
+
+float ServoDriver::ReadVoltage() {
+//  DBGSerial.println(F("Reading voltage"));
+  SSCSerial.write('V');
+  SSCSerial.write(cSSC_ADC_VOLT);
+  SSCSerial.write('\r');
+
+  int rd = SSCReadByte(10000);
+  if (rd < 0) {
+//    DBGSerial.println(F("Timeout."));
+    return 0;
+  }
+  float v = rd / 10.2f;
+//  DBGSerial.print(v);
+//  DBGSerial.println(F("v\n"));
+  return v;
 }
 
 //------------------------------------------------------------------------------------------
@@ -173,20 +187,36 @@ void ServoDriver::FreeServos() {
 void ServoDriver::SSCForwarder() {
   tone(SOUND_PIN, 440, 2000);
   delay(2000);
-  int sChar;
-  int sPrevChar;
+  int sChar = 0;
+  int sPrevChar = 0;
+  int sPrevPrevChar = 0;
+  int sPrevPrevPrevChar = 0;
   DBGSerial.println("SSC Forwarder mode - Enter $<cr> to exit");
 
   while (digitalRead(PS2_CMD)) {
     if ((sChar = DBGSerial.read()) != -1) {
       SSCSerial.write(sChar & 0xff);
-      if (((sChar == '\n') || (sChar == '\r')) && (sPrevChar == '$'))
-        break;    // exit out of the loop
+      if ((sChar == '\n') || (sChar == '\r')) {
+        sChar = '\r';
+        if (sPrevChar == '$') {
+          break;    // exit out of the loop
+        }
+      }
+      sPrevPrevPrevChar = sPrevPrevChar;
+      sPrevPrevChar = sPrevChar;
       sPrevChar = sChar;
     }
 
     if ((sChar = SSCSerial.read()) != -1) {
-      DBGSerial.write(sChar & 0xff);
+      if (sPrevPrevPrevChar == 'V') {
+        DBGSerial.print("\nValue: ");
+        DBGSerial.println(sChar & 0xff, DEC);
+      } else {
+        DBGSerial.write(sChar & 0xff);
+      }
+      if (sChar == '\r') {
+        DBGSerial.write('\n');
+      }
     }
   }
   DBGSerial.println("Exited SSC Forwarder mode");
@@ -195,29 +225,37 @@ void ServoDriver::SSCForwarder() {
 #endif // OPT_SSC_FORWARDER
 
 
-//==============================================================================
-// Quick and dirty helper function to read so many bytes in from the SSC with a timeout and an end of character marker...
-//==============================================================================
 int SSCRead(byte *pb, int cb, word wTimeout, word wEOL) {
   int ich;
   byte *pbIn = pb;
   unsigned long ulTimeLastChar = micros();
   while (cb) {
-    while (!SSCSerial.available()) {
-      // check for timeout
-      if ((word) (micros() - ulTimeLastChar) > wTimeout) {
-        return (int) (pb - pbIn);
-      }
+    ich = SSCReadByte(wTimeout);
+    if (ich < 0) {
+      break;
     }
-    ich = SSCSerial.read();
     *pb++ = (byte) ich;
     cb--;
-
-    if ((word) ich == wEOL)
-      break;    // we matched so get out of here.
-    ulTimeLastChar = micros();    // update to say we received something
+    if ((word) ich == wEOL) {
+      break;
+    }
   }
-
   return (int) (pb - pbIn);
+}
+
+/**
+ * Reads a byte from the serial with timeout
+ * @param wTimeout timeout in microseconds
+ * @return the byte or -1 if timeout exceeded
+ */
+int SSCReadByte(word wTimeout) {
+  unsigned long ulTimeLastChar = micros();
+  while (!SSCSerial.available()) {
+    // check for timeout
+    if ((word) (micros() - ulTimeLastChar) > wTimeout) {
+      return -1;
+    }
+  }
+  return SSCSerial.read();
 }
 

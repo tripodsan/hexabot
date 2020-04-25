@@ -67,6 +67,12 @@ void sound_effect(int nr) {
     case SOUND_EFFECT_POWER_DOWN:
       sound_slide(880, 440, 400, 10);
       break;
+    case SOUND_EFFECT_VOLTAGE_LOW:
+      sound_slide(220, 100, 400, 10);
+      break;
+    case SOUND_EFFECT_VOLTAGE_OK:
+      sound_slide(100, 220, 400, 10);
+      break;
     case SOUND_EFFECT_SPEED_UP:
       sound_slide(400, 500, 300, 10);
       break;

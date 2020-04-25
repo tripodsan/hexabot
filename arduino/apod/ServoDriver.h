@@ -28,6 +28,8 @@ class ServoDriver {
 public:
   void Init();
 
+  float ReadVoltage();
+
   void OutputServoInfoForLeg(byte LegIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1);
 
   void OutputServoInfoHead(short pan, short tilt, short rot);

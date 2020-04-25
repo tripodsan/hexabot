@@ -32,19 +32,8 @@ static byte PrevControlMode;
 static bool DoubleHeightOn;
 static bool DoubleTravelOn;
 
-void PS2TurnRobotOff();
-
 void InputController::Init() {
-  g_BodyYOffset = 65;
-  g_BodyYShift = 0;
-  g_sPS2ErrorCnt = 0;  // error count
-
-  ControlMode = WALKMODE;
-  PrevControlMode = WALKMODE;
-  DoubleHeightOn = false;
-  DoubleTravelOn = false;
-
-  g_InControlState.SpeedControl = 100;
+  Reset();
 }
 
 void openMandibles(short angle1) {
@@ -60,9 +49,8 @@ void InputController::ControlInput() {
 
     if (ps2x.ButtonPressed(PSB_START)) {// OK lets try "0" button for Start.
       if (g_InControlState.fHexOn) {
-        PS2TurnRobotOff();
+        g_InControlState.fHexOn = false;
       } else {
-        //Turn on
         g_InControlState.fHexOn = true;
       }
     }
@@ -270,35 +258,24 @@ void InputController::ControlInput() {
     if (g_sPS2ErrorCnt < MAXPS2ERRORCNT) {
       g_sPS2ErrorCnt++;
     } else if (g_InControlState.fHexOn) {
-      PS2TurnRobotOff();
+      Reset();
     }
   }
 }
 
-//==============================================================================
-// PS2TurnRobotOff - code used couple of places so save a little room...
-//==============================================================================
-void PS2TurnRobotOff() {
-  //Turn off
-  g_InControlState.BodyPos.x = 0;
-  g_InControlState.BodyPos.y = 0;
-  g_InControlState.BodyPos.z = 0;
-  g_InControlState.BodyRot1.x = 0;
-  g_InControlState.BodyRot1.y = 0;
-  g_InControlState.BodyRot1.z = 0;
-  g_InControlState.TravelLength.x = 0;
-  g_InControlState.TravelLength.z = 0;
-  g_InControlState.TravelLength.y = 0;
-  g_InControlState.MandibleAngle = 0;
-  g_InControlState.HeadAnglePan = 0;
-  g_InControlState.HeadAngleTilt = 0;
-  g_InControlState.HeadAngleRot = 0;
-  g_InControlState.TailAnglePan = 0;
-  g_InControlState.TailAngleTilt = 0;
-  g_BodyYOffset = 0;
+void InputController::Reset() {
+  g_BodyYOffset = 65;
   g_BodyYShift = 0;
+  g_sPS2ErrorCnt = 0;  // error count
+
+  ControlMode = WALKMODE;
+  PrevControlMode = WALKMODE;
+  DoubleHeightOn = false;
+  DoubleTravelOn = false;
+
+  memset(&g_InControlState, 0, sizeof(INCONTROLSTATE));
+  g_InControlState.SpeedControl = 100;
   g_InControlState.SelectedLeg = 255;
-  g_InControlState.fHexOn = false;
 }
 
 

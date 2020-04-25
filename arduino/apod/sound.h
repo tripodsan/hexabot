@@ -22,6 +22,8 @@
 #define SOUND_EFFECT_POWER_DOWN  1
 #define SOUND_EFFECT_SPEED_UP    2
 #define SOUND_EFFECT_SPEED_DOWN  3
+#define SOUND_EFFECT_VOLTAGE_LOW 4
+#define SOUND_EFFECT_VOLTAGE_OK  5
 
 #include "pitches.h"
 

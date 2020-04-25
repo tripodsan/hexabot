@@ -26,6 +26,7 @@ public:
 
   void ControlInput();
 
+  void Reset();
 };
 
 typedef struct _Coord3D {
