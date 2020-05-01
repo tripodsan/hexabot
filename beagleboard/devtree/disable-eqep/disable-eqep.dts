@@ -1,0 +1,14 @@
+/dts-v1/;
+/plugin/;
+ 
+/ {
+    model = "TI AM335x BeagleBone Blue";
+    compatible = "ti,am335x-bone-blue", "ti,am33xx";
+
+    fragment@0 {
+        target = <&eqep0>;
+        __overlay__ {
+	    status = "disabled";
+        };
+    };
+};
