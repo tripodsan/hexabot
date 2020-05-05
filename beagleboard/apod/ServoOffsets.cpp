@@ -1,96 +1,78 @@
-#include <Arduino.h>
-#include "globals.h"
-#include "PS2Support.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include "PS2X_lib.h"
+#include "SSCDriver.h"
+#include "ServoOffsets.h"
 
-#ifdef OPT_FIND_SERVO_OFFSETS
+ServoOffsets::ServoOffsets(SSCDriver *driver, PS2X *ps2) : driver(driver), ps2(ps2) { }
 
-#define USE_PS2_CONTROLLER
-
-const __FlashStringHelper * getServoName(int idx) {
+const char * ServoOffsets::ServoName(int idx) {
   switch (idx) {
-    case  0: return F("RR Coxa ");
-    case  1: return F("RR Femur");
-    case  2: return F("RR Tibia");
-    case  3: return F("RM Coxa ");
-    case  4: return F("RM Femur");
-    case  5: return F("RM Tibia");
-    case  6: return F("RF Coxa ");
-    case  7: return F("RF Femur");
-    case  8: return F("RF Tibia");
-    case  9: return F("LR Coxa ");
-    case 10: return F("LR Femur");
-    case 11: return F("LR Tibia");
-    case 12: return F("LM Coxa ");
-    case 13: return F("LM Femur");
-    case 14: return F("LM Tibia");
-    case 15: return F("LF Coxa ");
-    case 16: return F("LF Femur");
-    case 17: return F("LF Tibia");
-    case 18: return F("HD LMand");
-    case 19: return F("HD RMand");
-    case 20: return F("HD Pan  ");
-    case 21: return F("HD Tilt ");
-    case 22: return F("HD Rot  ");
-    case 23: return F("TL Pan  ");
-    case 24: return F("TL Tilt ");
-    default: return F("Unknown ");
+    case  0: return "RR Coxa ";
+    case  1: return "RR Femur";
+    case  2: return "RR Tibia";
+    case  3: return "RM Coxa ";
+    case  4: return "RM Femur";
+    case  5: return "RM Tibia";
+    case  6: return "RF Coxa ";
+    case  7: return "RF Femur";
+    case  8: return "RF Tibia";
+    case  9: return "LR Coxa ";
+    case 10: return "LR Femur";
+    case 11: return "LR Tibia";
+    case 12: return "LM Coxa ";
+    case 13: return "LM Femur";
+    case 14: return "LM Tibia";
+    case 15: return "LF Coxa ";
+    case 16: return "LF Femur";
+    case 17: return "LF Tibia";
+    case 18: return "HD LMand";
+    case 19: return "HD RMand";
+    case 20: return "HD Pan  ";
+    case 21: return "HD Tilt ";
+    case 22: return "HD Rot  ";
+    case 23: return "TL Pan  ";
+    case 24: return "TL Tilt ";
+    default: return "Unknown ";
   }
 }
 
-void printOffsets(int asOffsets[]) {
+void ServoOffsets::PrintOffsets(int offsets[]) {
   for (int i = 0; i < NUMSERVOS; i++) {
-    Serial.print("Servo: ");
-    Serial.print(getServoName(i));
-    Serial.print("(");
-    Serial.print(asOffsets[i], DEC);
-    Serial.println(")");
+    printf("Servo: %s (%d)\n", ServoName(i), offsets[i]);
   }
 }
 
-void ServoDriver::FindServoOffsets() {
-  byte bodyPart = 0;
+void ServoOffsets::Run() {
+  int bodyPart = 0;
   int offsets[NUMSERVOS];
   int angles[NUMSERVOS];
 
   uint8_t idx, prevIdx;      // which servo number
-  int data;
-  boolean fExit = false;  // when to exit
+  uint16_t buttons = 0;
+  char data;
+  bool fExit = false;  // when to exit
 
-  if (CheckVoltage()) {
-    // Voltage is low...
-    Serial.println(F("Low Voltage: fix or hit $ to abort"));
-    while (CheckVoltage()) {
-      if (Serial.read() == '$') return;
-    }
-  }
-
-  // now lets loop through and get information and set servos to 1500
-  byte szTemp[5];
   for (idx = 0; idx < NUMSERVOS; idx++) {
-    SSCSerial.print("R");
-    SSCSerial.println(32 + ALL_SERVOS_PINS[idx], DEC);
-    // now read in the current value...  Maybe should use atoi...
-    byte cbRead = SSCRead((byte *) szTemp, sizeof(szTemp), 10000, 13);
-    if (cbRead > 0) {
-      offsets[idx] = atoi((const char *) szTemp);
-    }
-    SSCSerial.print("#");
-    SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-    SSCSerial.println("P1500");
+    offsets[idx] = driver->ReadRegister(32 + ALL_SERVOS_PINS[idx]);
+  }
+  PrintOffsets(offsets);
+
+  for (idx = 0; idx < NUMSERVOS; idx++) {
+    driver->OutputServoAngle(ALL_SERVOS_PINS[idx], 0);
     angles[idx] = 0;
   }
+  driver->Commit(200);
 
-  printOffsets(offsets);
+  // make reads non-blocking
+  fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 
-  // OK lets move all of the servos to their zero point.
-  Serial.println(F("Find Servo Zeros.\n$-Exit, +- changes, *-change servo, <> - angles"));
-  Serial.println(F("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia"));
-  Serial.println(F("    6 Chooses a mandible, L-Left, R-Right"));
-  Serial.println(F("    7 Chooses head, P-Pan, T-Tilt, R-Rot"));
-  Serial.println(F("    8 Chooses tail, P-Pan, T-Tilt"));
-#ifdef USE_PS2_CONTROLLER
-  Serial.println(F("    ps2: []-prev, O-next, pad +/-, R1+L angles"));
-#endif
+  printf("Find Servo Zeros.\n$-Exit, +- changes, *-change servo, <> - angles\n");
+  printf("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia\n");
+  printf("    6 Chooses a mandible, L-Left, R-Right\n");
+  printf("    7 Chooses head, P-Pan, T-Tilt, R-Rot\n");
+  printf("    8 Chooses tail, P-Pan, T-Tilt\n");
+  printf("    ps2: []-prev, O-next, pad +/-, R1+L angles\n");
 
   idx = 0;
   prevIdx = -1;
@@ -99,39 +81,24 @@ void ServoDriver::FindServoOffsets() {
     int angle = angles[idx];
     if (idx != prevIdx) {
       prevIdx = idx;
-      Serial.print("Servo: ");
-      Serial.print(getServoName(idx));
-      Serial.print("(");
-      Serial.print(offsets[idx], DEC);
-      Serial.println(")");
+      printf("Servo: %s (%d)\n", ServoName(idx), offsets[idx]);
 
       int pwm = DEG2PWM(angle);
 
       // Now lets wiggle the servo
-      SSCSerial.print("#");
-      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("P");
-      SSCSerial.print(pwm + 100, DEC);
-      SSCSerial.println("T100");
-      delay(100);
-
-      SSCSerial.print("#");
-      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("P");
-      SSCSerial.print(pwm - 200, DEC);
-      SSCSerial.println("T200");
-      delay(200);
-
-      SSCSerial.print("#");
-      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("P");
-      SSCSerial.print(pwm, DEC);
-      SSCSerial.println("T100");
-      delay(200);
+      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm + 100);
+      driver->Commit(100);
+      usleep(100 * 1000);
+      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm - 100);
+      driver->Commit(200);
+      usleep(200 * 1000);
+      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm);
+      driver->Commit(100);
+      usleep(100 * 1000);
     }
 
-    if (Serial.available()) {
-      data = Serial.read();
+    if (read(STDIN_FILENO, &data, 1) > 0){
+      printf("read: %c\n", data);
       if (data == '$') {
         fExit = true;  // not sure how the keypad will map so give NL, CR, LF... all implies exit
       } else if ((data == '+') || (data == '-')) {
@@ -166,15 +133,15 @@ void ServoDriver::FindServoOffsets() {
         } else {
           idx = bodyPart;
         }
-      } else if ((data == 't')) {
+      } else if (data == 't') {
         if (bodyPart == 0) {
           idx = (idx / NUMSERVOSPERLEG) * NUMSERVOSPERLEG + 2;
         } else {
           idx = bodyPart + 1;
         }
-      } else if ((data == 'f')) {
+      } else if (data == 'f') {
         idx = (idx / NUMSERVOSPERLEG) * NUMSERVOSPERLEG + 1;
-      } else if ((data == 'r')) {
+      } else if (data == 'r') {
         if (bodyPart == NUMSERVOSPERLEG * 6) {
           idx = bodyPart + 1;
         } else {
@@ -185,90 +152,77 @@ void ServoDriver::FindServoOffsets() {
         idx = (idx + 1) % NUMSERVOS;
       }
     }
-#ifdef USE_PS2_CONTROLLER
-    if (ps2x.read_gamepad()) {
-      if (ps2x.ButtonPressed(PSB_CIRCLE)) {
+
+    ps2->Poll();
+    ps2->GetKeyState();
+    if (ps2->state.btnStt) {
+      driver->FreeServos();
+      return;
+    }
+    // debounce all buttons
+    if (~ps2->state.buttons && !buttons) {
+      if (ps2->state.btnCir) {
         idx = (idx + 1) % NUMSERVOS;
       }
-      if (ps2x.ButtonPressed(PSB_SQUARE)) {
+      if (ps2->state.btnSqr) {
         idx = (idx - 1 + NUMSERVOS) % NUMSERVOS;
       }
-      if (ps2x.ButtonPressed(PSB_PAD_LEFT)) {
+      if (ps2->state.padLeft) {
         offset--;
       }
-      if (ps2x.ButtonPressed(PSB_PAD_RIGHT)) {
+      if (ps2->state.padRight) {
         offset++;
       }
-      if (ps2x.ButtonPressed(PSB_PAD_UP)) {
+      if (ps2->state.padUp) {
         offset+= 5;
       }
-      if (ps2x.ButtonPressed(PSB_PAD_DOWN)) {
+      if (ps2->state.padDown) {
         offset-= 5;
       }
-      if (ps2x.Button(PSB_R1)) {
-        angle += (ps2x.Analog(PSS_LY) - 128) / 8;
-      }
-      delay(10);
-    } else {
-      Serial.println("no ps2");
     }
-#endif
-    offset = min(max(offset, -100), 100);
-    angle = min(max(angle, -900), 900);
+    buttons = ~ps2->state.buttons;
+
+    if (ps2->state.btnR1) {
+      angle += (ps2->state.joyLY - 128) / 8;
+      usleep(20 * 1000);
+    } else {
+      usleep(100 * 1000);
+    }
+
+    offset = std::min(std::max(offset, -100), 100);
+    angle = std::min(std::max(angle, -900), 900);
     if (prevIdx == idx && offset != offsets[idx]) {
       offsets[idx] = offset;
-      Serial.print("    ");
-      Serial.println(offset, DEC);
-
-      SSCSerial.print("#");
-      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("PO");
-      SSCSerial.println(offset, DEC);
+      printf("    %d\n", offset);
+      driver->WriteOffset(idx, offset);
     }
     if (prevIdx == idx && angle != angles[idx]) {
       angles[idx] = angle;
       int pwm = DEG2PWM(angle);
-      Serial.print("    ");
-      Serial.print(angle, DEC);
-      Serial.print("° (");
-      Serial.print(pwm);
-      Serial.println(")");
-
-      SSCSerial.print("#");
-      SSCSerial.print(ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("P");
-      SSCSerial.print(pwm, DEC);
-      SSCSerial.println("T10");
-      delay(10);
+      printf("    %d° (%d)\n", angle, pwm);
+      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm);
+      driver->Commit(10);
+      usleep(10 * 1000);
     }
   }
 
-  Serial.print(F("Find Servo exit "));
-  printOffsets(offsets);
-  Serial.print(F("\nSave Changes? Y/N: "));
+  printf("Calibrate Servo exit\n");
+  PrintOffsets(offsets);
+  printf("\nSave Changes? Y/N: \n");
 
   //get user entered data
-  while (((data = Serial.read()) == -1) || ((data >= 10) && (data <= 15)));
+  while (((read(STDIN_FILENO, &data, 1)) == -1) || ((data >= 10) && (data <= 15)));
 
   if ((data == 'Y') || (data == 'y')) {
     for (idx = 0; idx < NUMSERVOS; idx++) {
-      SSCSerial.print("R");
-      SSCSerial.print(32 + ALL_SERVOS_PINS[idx], DEC);
-      SSCSerial.print("=");
-      SSCSerial.println(offsets[idx], DEC);
-      delay(10);
+      driver->WriteRegister(32 + ALL_SERVOS_PINS[idx], offsets[idx]);
     }
     // bit 2 Initial Pulse: Offset Enable; If '1', enables the Initial Pulse Offset register
-    SSCSerial.println("R0=4");
+    driver->Write("R0=4");
+    usleep(100 * 1000);
 
-    // Then I need to have the SSC-32 reboot in order to use the new values.
-    delay(10);    // give it some time to write stuff out.
-    SSCSerial.println("GOBOOT");
-    delay(10);        // Give it a little time
-    SSCSerial.println("g0000");    // tell it that we are done in the boot section so go run the normall SSC stuff...
-    delay(500);                // Give it some time to boot up...
+    // reboot
+    driver->Reboot();
   }
-  FreeServos();
+  driver->FreeServos();
 }
-
-#endif  // OPT_FIND_SERVO_OFFSETS

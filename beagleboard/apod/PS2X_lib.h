@@ -6,6 +6,27 @@
 #include <stdint.h>
 #include "bus/SPIDevice.h"
 
+#define PSB_SELECT      0x0001
+#define PSB_L3          0x0002
+#define PSB_R3          0x0004
+#define PSB_START       0x0008
+#define PSB_PAD_UP      0x0010
+#define PSB_PAD_RIGHT   0x0020
+#define PSB_PAD_DOWN    0x0040
+#define PSB_PAD_LEFT    0x0080
+#define PSB_L2          0x0100
+#define PSB_R2          0x0200
+#define PSB_L1          0x0400
+#define PSB_R1          0x0800
+#define PSB_GREEN       0x1000
+#define PSB_RED         0x2000
+#define PSB_BLUE        0x4000
+#define PSB_PINK        0x8000
+#define PSB_TRIANGLE    0x1000
+#define PSB_CIRCLE      0x2000
+#define PSB_CROSS       0x4000
+#define PSB_SQUARE      0x8000
+
 typedef struct PSXPad {
   uint8_t cmdPoll[64];
   uint8_t cmdResponse[64];
@@ -29,6 +50,7 @@ typedef enum {
 typedef struct PSXPad_KeyState {
   PSXPad_KeyStateType_t type;
   /* PSXPAD_KEYSTATE_DIGITAL */
+  uint16_t buttons;
   uint8_t btnSel;
   uint8_t btnStt;
   uint8_t padUp;
@@ -39,6 +61,8 @@ typedef struct PSXPad_KeyState {
   uint8_t btnR1;
   uint8_t btnL2;
   uint8_t btnR2;
+  uint8_t btnL3;
+  uint8_t btnR3;
   uint8_t btnTri;
   uint8_t btnCir;
   uint8_t btnCrs;
@@ -46,10 +70,8 @@ typedef struct PSXPad_KeyState {
   /* PSXPAD_KEYSTATE_ANALOG1 */
   uint8_t joyRX;
   uint8_t joyRY;
-  uint8_t joyR3;
   uint8_t joyLX;
   uint8_t joyLY;
-  uint8_t joyL3;
   /* PSXPAD_KEYSTATE_ANALOG2 */
   uint8_t padARight;
   uint8_t padALeft;

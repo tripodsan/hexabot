@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "PS2X_lib.h"
 #include "SSCDriver.h"
-
+#include "ServoOffsets.h"
 
 #include<stdio.h>
 #include<fcntl.h>
@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int spi_test_main(){
+int ps2_test(){
   SPIDevice spi(1,1);
   spi.setSpeed(100000);
   spi.setMode(SPIDevice::MODE3);
@@ -109,10 +109,28 @@ int fwd_main() {
   return 0;
 }
 
+int calibrate() {
+  SPIDevice spi(1,1);
+  spi.setSpeed(100000);
+  spi.setMode(SPIDevice::MODE3);
+  spi.setLSBFirst(1);
+  spi.debugDump();
+  PS2X ps2x(&spi);
+  ps2x.SetADMode(true, true);
+
+  SSCDriver driver{};
+  if (driver.Init() < 0) {
+    return -1;
+  }
+
+  ServoOffsets offsets(&driver, &ps2x);
+  offsets.Run();
+  return 0;
+}
 
 int main(int argc, char *argv[]){
-  if (argc > 1 && !strcmp(argv[1], "spi")) {
-    return spi_test_main();
+  if (argc > 1 && !strcmp(argv[1], "ps2")) {
+    return ps2_test();
   }
   if (argc > 1 && !strcmp(argv[1], "fwd")) {
     return fwd_main();
@@ -120,6 +138,9 @@ int main(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "uart")) {
     return uart_main(argc, argv);
   }
-  fprintf(stderr, "usage: %s [spi|fwd|uart", argv[0]);
+  if (argc > 1 && !strcmp(argv[1], "cali")) {
+    return calibrate();
+  }
+  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali)\n", argv[0]);
   return -1;
 }

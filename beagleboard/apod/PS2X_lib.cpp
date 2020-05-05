@@ -62,6 +62,7 @@ void PS2X::Poll() {
 void PS2X::GetKeyState() {
   memset(&state, 0, sizeof(PSXPad_KeyState_t));
   state.type = PSXPAD_KEYSTATE_UNKNOWN;
+  state.buttons = (uint16_t) pad.cmdResponse[3] | (uint16_t) pad.cmdResponse[4] << 8u;
   switch(pad.cmdResponse[1]) {
     case 0x79:
       state.type = PSXPAD_KEYSTATE_ANALOG2;
@@ -86,27 +87,27 @@ void PS2X::GetKeyState() {
       state.joyRY = pad.cmdResponse[6];
       state.joyLX = pad.cmdResponse[7];
       state.joyLY = pad.cmdResponse[8];
-      state.joyL3 = (pad.cmdResponse[3] & 0x02U) ? 0 : 1;
-      state.joyR3 = (pad.cmdResponse[3] & 0x04U) ? 0 : 1;
       // no break
     case 0x41:
       if(state.type == PSXPAD_KEYSTATE_UNKNOWN) {
         state.type = PSXPAD_KEYSTATE_DIGITAL;
       }
-      state.btnSel   = (pad.cmdResponse[3] & 0x01U) ? 0 : 1;
-      state.btnStt   = (pad.cmdResponse[3] & 0x08U) ? 0 : 1;
-      state.padUp    = (pad.cmdResponse[3] & 0x10U) ? 0 : 1;
-      state.padRight = (pad.cmdResponse[3] & 0x20U) ? 0 : 1;
-      state.padDown  = (pad.cmdResponse[3] & 0x40U) ? 0 : 1;
-      state.padLeft  = (pad.cmdResponse[3] & 0x80U) ? 0 : 1;
-      state.btnL2    = (pad.cmdResponse[4] & 0x01U) ? 0 : 1;
-      state.btnR2    = (pad.cmdResponse[4] & 0x02U) ? 0 : 1;
-      state.btnL1    = (pad.cmdResponse[4] & 0x04U) ? 0 : 1;
-      state.btnR1    = (pad.cmdResponse[4] & 0x08U) ? 0 : 1;
-      state.btnTri   = (pad.cmdResponse[4] & 0x10U) ? 0 : 1;
-      state.btnCir   = (pad.cmdResponse[4] & 0x20U) ? 0 : 1;
-      state.btnCrs   = (pad.cmdResponse[4] & 0x40U) ? 0 : 1;
-      state.btnSqr   = (pad.cmdResponse[4] & 0x80U) ? 0 : 1;
+      state.btnSel   = (state.buttons & PSB_SELECT) ? 0 : 1;
+      state.btnStt   = (state.buttons & PSB_START) ? 0 : 1;
+      state.padUp    = (state.buttons & PSB_PAD_UP) ? 0 : 1;
+      state.padRight = (state.buttons & PSB_PAD_RIGHT) ? 0 : 1;
+      state.padDown  = (state.buttons & PSB_PAD_DOWN) ? 0 : 1;
+      state.padLeft  = (state.buttons & PSB_PAD_LEFT) ? 0 : 1;
+      state.btnR1    = (state.buttons & PSB_R1) ? 0 : 1;
+      state.btnR2    = (state.buttons & PSB_R2) ? 0 : 1;
+      state.btnR3    = (state.buttons & PSB_R3) ? 0 : 1;
+      state.btnL1    = (state.buttons & PSB_L1) ? 0 : 1;
+      state.btnL2    = (state.buttons & PSB_L2) ? 0 : 1;
+      state.btnL3    = (state.buttons & PSB_L3) ? 0 : 1;
+      state.btnTri   = (state.buttons & PSB_TRIANGLE) ? 0 : 1;
+      state.btnCir   = (state.buttons & PSB_CIRCLE) ? 0 : 1;
+      state.btnCrs   = (state.buttons & PSB_CROSS) ? 0 : 1;
+      state.btnSqr   = (state.buttons & PSB_SQUARE) ? 0 : 1;
   }
 }
 
@@ -115,6 +116,8 @@ void PS2X::command(const uint8_t cmd[], const uint8_t len) {
   if (sent < 0) {
     return;
   }
+//#define DEBUG_PS2X
+#ifdef DEBUG_PS2X
   std::cout << "i/o(" << sent << ")\n>> ";
   for (int ret = 0; ret < len; ret++) {
     printf("%.2X ", cmd[ret]);
@@ -124,14 +127,15 @@ void PS2X::command(const uint8_t cmd[], const uint8_t len) {
     printf("%.2X ", pad.cmdResponse[ret]);
   }
   std::cout << "\n";
+#endif
 }
 
 void PS2X::dump() {
   cout << " U  D  L  R  Tri Sqr Crs Cir  L1 L2 L3 R1 R2 R3  Sel Stt  LX,LY  RX,RY \n";
   printf("%2d %2d %2d %2d  ", state.padUp, state.padDown, state.padLeft, state.padRight);
   printf("%3d %3d %3d %3d  ", state.btnTri, state.btnSqr, state.btnCrs, state.btnCir);
-  printf("%2d %2d %2d ", state.btnL1, state.btnL2, state.joyL3);
-  printf("%2d %2d %2d  ", state.btnR1, state.btnR2, state.joyR3);
+  printf("%2d %2d %2d ", state.btnL1, state.btnL2, state.btnL3);
+  printf("%2d %2d %2d  ", state.btnR1, state.btnR2, state.btnR3);
   printf("%3d %3d  ", state.btnSel, state.btnStt);
   printf("%2x,%2x  ", state.joyLX, state.joyLY);
   printf("%2x,%2x  ", state.joyRX, state.joyRY);

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/termios.h>
 #include <cstring>
+#include <cstdlib>
 #include "SSCDriver.h"
 
 int SSCDriver::Init() {
@@ -25,15 +26,16 @@ int SSCDriver::Init() {
   if (Write("ver\r") < 0){
     return -1;
   }
-  usleep(1000 * 100);
+  usleep(1000 * 200);
 
   char buffer[256];
   int cbRead = Read(buffer, sizeof(buffer), 100);
   if (cbRead <= 0) {
     printf("SSC Version: n/a\n");
-  } else {
-    printf("SSC Version: %s\n", buffer);
+    return -1;
   }
+
+  printf("SSC Version: %s\n", buffer);
   return 0;
 }
 
@@ -138,6 +140,21 @@ void SSCDriver::OutputServoInfoTail(short pan, short tilt) {
   }
 }
 
+void SSCDriver::OutputServo(int idx, uint16_t duty) {
+  uint8_t data[] = {
+      static_cast<uint8_t>(idx  + 0x80),
+      static_cast<uint8_t>(duty >> 8u),
+      static_cast<uint8_t>(duty & 0xffu),
+  };
+  if (write(fd, data, sizeof(data)) < 0){
+    perror("Error: Failed to write to the SSC");
+  }
+}
+
+void SSCDriver::OutputServoAngle(int idx, short angle) {
+  OutputServo(idx, DEG2PWM(angle));
+}
+
 /**
  * updates the mandibles
  * @param left Left mandible angle in degrees. (1 decimal)
@@ -158,10 +175,10 @@ void SSCDriver::OutputServoInfoMandibles(short left, short right) {
   if (write(fd, data, sizeof(data)) < 0){
     perror("Error: Failed to write to the SSC");
   }
-  this->CommitServoDriver(wMandibleTime);
+  this->Commit(wMandibleTime);
 }
 
-void SSCDriver::CommitServoDriver(uint16_t wMoveTime) const {
+void SSCDriver::Commit(uint16_t wMoveTime) const {
   uint8_t data[] = {
       0xA1,
       static_cast<uint8_t>(wMoveTime >> 8u),
@@ -181,7 +198,36 @@ void SSCDriver::FreeServos() const {
   if (write(fd, data, sizeof(data)) < 0){
     perror("Error: Failed to write to the SSC");
   }
-  CommitServoDriver(200);
+  Commit(200);
+}
+
+int SSCDriver::ReadRegister(int reg) {
+  char buff[16];
+  sprintf(buff, "R%d\r", reg);
+  if (Write(buff) < 0) {
+    return 0;
+  }
+  usleep(10 * 1000);
+  int rd = Read(buff, sizeof(buff), 100);
+  if (rd < 0) {
+    perror("Error: Reading from SSC");
+    return 0;
+  }
+  return atoi(buff);
+}
+
+int SSCDriver::WriteRegister(int reg, int value) {
+  char buff[16];
+  sprintf(buff, "R%d=%d\r", reg, value);
+  int rd = Write(buff);
+  usleep(10 * 1000);
+  return rd;
+}
+
+int SSCDriver::WriteOffset(int idx, int offset) {
+  char buff[16];
+  sprintf(buff, "#%dPO%d\r", idx, offset);
+  return Write(buff);
 }
 
 int SSCDriver::Read(char *pb, int cb, uint8_t timeout) {
@@ -223,6 +269,14 @@ int SSCDriver::ReadByte(uint8_t timeout) {
   }
   return c;
 }
+
+void SSCDriver::Reboot() {
+  Write("GOBOOT\r");
+  usleep(10 * 100);
+  Write("g0000\r");
+  usleep(500 * 1000);
+}
+
 
 void SSCDriver::Forwarder() {
   bool maybeExit = false;
