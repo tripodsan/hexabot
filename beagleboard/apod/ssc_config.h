@@ -47,12 +47,12 @@
 //--------------------------------------------------------------------
 // min/max angles
 
-#define cRRCoxaMin1     -650      //Mechanical limits of the Right Rear Leg
-#define cRRCoxaMax1     650
-#define cRRFemurMin1    -1050
-#define cRRFemurMax1    750
-#define cRRTibiaMin1    -530
-#define cRRTibiaMax1    900
+#define cRRCoxaMin1     -65.0f      //Mechanical limits of the Right Rear Leg
+#define cRRCoxaMax1      65.0f
+#define cRRFemurMin1    -105.0f
+#define cRRFemurMax1     75.0f
+#define cRRTibiaMin1    -53.0f
+#define cRRTibiaMax1     90.0f
 
 #define cRMCoxaMin1     -650      //Mechanical limits of the Right Middle Leg
 #define cRMCoxaMax1     650
@@ -108,9 +108,9 @@
 //--------------------------------------------------------------------
 // Universal dimensions for each leg in mm
 
-#define cXXCoxaLength     50
-#define cXXFemurLength    80
-#define cXXTibiaLength    120
+#define cXXCoxaLength     50.0f
+#define cXXFemurLength    80.0f
+#define cXXTibiaLength    120.0f
 
 #define cRRCoxaLength     cXXCoxaLength	    //Right Rear leg
 #define cRRFemurLength    cXXFemurLength
@@ -139,19 +139,19 @@
 //--------------------------------------------------------------------
 // body dimensions
 
-#define cRRCoxaAngle1  -450   // Default Coxa setup angle, decimals = 1
-#define cRMCoxaAngle1     0   // Default Coxa setup angle, decimals = 1
-#define cRFCoxaAngle1   450   // Default Coxa setup angle, decimals = 1
-#define cLRCoxaAngle1  -450   // Default Coxa setup angle, decimals = 1
-#define cLMCoxaAngle1     0   // Default Coxa setup angle, decimals = 1
-#define cLFCoxaAngle1   450   // Default Coxa setup angle, decimals = 1
+#define cRRCoxaAngle1   -45.0f
+#define cRMCoxaAngle1     0.0f
+#define cRFCoxaAngle1    45.0f
+#define cLRCoxaAngle1   -45.0f
+#define cLMCoxaAngle1     0.0f
+#define cLFCoxaAngle1    45.0f
 
-#define cRROffsetX      -70   // Distance X from center of the body to the Right Rear coxa
-#define cRROffsetZ       85   // Distance Z from center of the body to the Right Rear coxa
-#define cRMOffsetX      -70   // Distance X from center of the body to the Right Middle coxa
-#define cRMOffsetZ        0   // Distance Z from center of the body to the Right Middle coxa
-#define cRFOffsetX      -70   // Distance X from center of the body to the Right Front coxa
-#define cRFOffsetZ      -85   // Distance Z from center of the body to the Right Front coxa
+#define cRROffsetX       70.0f   // Distance X from center of the body to the Right Rear coxa
+#define cRROffsetY      -85.0f   // Distance Y from center of the body to the Right Rear coxa
+#define cRMOffsetX       70.0f   // Distance X from center of the body to the Right Middle coxa
+#define cRMOffsetY        0.0f   // Distance Y from center of the body to the Right Middle coxa
+#define cRFOffsetX       70.0f   // Distance X from center of the body to the Right Front coxa
+#define cRFOffsetY       85.0f   // Distance Z from center of the body to the Right Front coxa
 
 #define cLROffsetX       70   // Distance X from center of the body to the Left Rear coxa
 #define cLROffsetZ       85   // Distance Z from center of the body to the Left Rear coxa
@@ -163,7 +163,7 @@
 //--------------------------------------------------------------------
 // start positions
 
-#define cHexInitXZ	     120
+#define cHexInitXY	     120.0f
 #define CHexInitXZCos45   85  // COS(45) * XZ
 #define CHexInitXZSin45   85  // sin(45) * XZ
 #define CHexInitY	        80
@@ -192,4 +192,3 @@
 #define cLFInitPosY     CHexInitY
 #define cLFInitPosZ     -CHexInitXZSin45
 
-#define DEG2PWM(deg) ((long)(deg) * 2000L / 1800L + 1500L)

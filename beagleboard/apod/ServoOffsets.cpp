@@ -46,7 +46,7 @@ void ServoOffsets::PrintOffsets(int offsets[]) {
 void ServoOffsets::Run() {
   int bodyPart = 0;
   int offsets[NUMSERVOS];
-  int angles[NUMSERVOS];
+  float angles[NUMSERVOS];
 
   uint8_t idx, prevIdx;      // which servo number
   uint16_t buttons = 0;
@@ -78,7 +78,7 @@ void ServoOffsets::Run() {
   prevIdx = -1;
   while (!fExit) {
     int offset = offsets[idx];
-    int angle = angles[idx];
+    float angle = angles[idx];
     if (idx != prevIdx) {
       prevIdx = idx;
       printf("Servo: %s (%d)\n", ServoName(idx), offsets[idx]);
@@ -183,14 +183,14 @@ void ServoOffsets::Run() {
     buttons = ~ps2->state.buttons;
 
     if (ps2->state.btnR1) {
-      angle += (ps2->state.joyLY - 128) / 8;
+      angle += (float) (ps2->state.joyLY - 127) / 100.0f;
       usleep(20 * 1000);
     } else {
       usleep(100 * 1000);
     }
 
     offset = std::min(std::max(offset, -100), 100);
-    angle = std::min(std::max(angle, -900), 900);
+    angle = std::min(std::max(angle, -90.0f), 90.0f);
     if (prevIdx == idx && offset != offsets[idx]) {
       offsets[idx] = offset;
       printf("    %d\n", offset);
@@ -199,7 +199,7 @@ void ServoOffsets::Run() {
     if (prevIdx == idx && angle != angles[idx]) {
       angles[idx] = angle;
       int pwm = DEG2PWM(angle);
-      printf("    %d° (%d)\n", angle, pwm);
+      printf("    %.2f° (%d)\n", angle, pwm);
       driver->OutputServo(ALL_SERVOS_PINS[idx], pwm);
       driver->Commit(10);
       usleep(10 * 1000);

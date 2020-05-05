@@ -71,69 +71,80 @@ float SSCDriver::ReadVoltage() {
   return v;
 }
 
-void SSCDriver::OutputServoInfoForLeg(int legIdx, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1) const {
-  uint16_t wCoxaSSCV;
-  uint16_t wFemurSSCV;
-  uint16_t wTibiaSSCV;
-
-  //Update Right Legs
-  if (legIdx < 3) {
-    wCoxaSSCV  = DEG2PWM(-sCoxaAngle1);
-    wFemurSSCV = DEG2PWM(-sFemurAngle1);
-    wTibiaSSCV = DEG2PWM(-sTibiaAngle1);
-  } else {
-    wCoxaSSCV  = DEG2PWM(sCoxaAngle1);
-    wFemurSSCV = DEG2PWM(sFemurAngle1);
-    wTibiaSSCV = DEG2PWM(sTibiaAngle1);
-  }
+void SSCDriver::OutputServoLeg(int legIdx, float coxa, float femur, float tibia) const {
+  uint16_t coxaPWM  = DEG2PWM(coxa);
+  uint16_t femurPWM = DEG2PWM(femur);
+  uint16_t tibiaPWM = DEG2PWM(tibia);
 
   uint8_t data[] = {
       static_cast<uint8_t>(cCoxaPin[legIdx] + 0x80),
-      static_cast<uint8_t>(wCoxaSSCV >> 8u),
-      static_cast<uint8_t>(wCoxaSSCV & 0xffu),
+      static_cast<uint8_t>(coxaPWM >> 8u),
+      static_cast<uint8_t>(coxaPWM & 0xffu),
       static_cast<uint8_t>(cFemurPin[legIdx] + 0x80),
-      static_cast<uint8_t>(wFemurSSCV >> 8u),
-      static_cast<uint8_t>(wFemurSSCV & 0xffu),
+      static_cast<uint8_t>(femurPWM >> 8u),
+      static_cast<uint8_t>(femurPWM & 0xffu),
       static_cast<uint8_t>(cTibiaPin[legIdx] + 0x80),
-      static_cast<uint8_t>(wTibiaSSCV >> 8u),
-      static_cast<uint8_t>(wTibiaSSCV & 0xffu),
+      static_cast<uint8_t>(tibiaPWM >> 8u),
+      static_cast<uint8_t>(tibiaPWM & 0xffu),
   };
   if (write(fd, data, sizeof(data)) < 0){
     perror("Error: Failed to write to the SSC");
   }
 }
 
-void SSCDriver::OutputServoInfoHead(short pan, short tilt, short rot) {
-  uint16_t wPanSSCV = DEG2PWM(pan);
-  uint16_t wTiltSSCV = DEG2PWM(tilt);
-  uint16_t wRotSSCV = DEG2PWM(rot);
+void SSCDriver::OutputServoHead(float pan, float tilt, float rot) {
+  uint16_t panPWM = DEG2PWM(pan);
+  uint16_t tltPWM = DEG2PWM(tilt);
+  uint16_t rotPWM = DEG2PWM(rot);
 
   uint8_t data[] = {
       cHeadPanPin  + 0x80,
-      static_cast<uint8_t>(wPanSSCV >> 8u),
-      static_cast<uint8_t>(wPanSSCV & 0xffu),
+      static_cast<uint8_t>(panPWM >> 8u),
+      static_cast<uint8_t>(panPWM & 0xffu),
       cHeadTiltPin  + 0x80,
-      static_cast<uint8_t>(wTiltSSCV >> 8u),
-      static_cast<uint8_t>(wTiltSSCV & 0xffu),
+      static_cast<uint8_t>(tltPWM >> 8u),
+      static_cast<uint8_t>(tltPWM & 0xffu),
       cHeadRotPin  + 0x80,
-      static_cast<uint8_t>(wRotSSCV >> 8u),
-      static_cast<uint8_t>(wRotSSCV & 0xffu),
+      static_cast<uint8_t>(rotPWM >> 8u),
+      static_cast<uint8_t>(rotPWM & 0xffu),
   };
   if (write(fd, data, sizeof(data)) < 0){
     perror("Error: Failed to write to the SSC");
   }
 }
 
-void SSCDriver::OutputServoInfoTail(short pan, short tilt) {
-  uint16_t wPanSSCV = DEG2PWM(pan);
-  uint16_t wTiltSSCV = DEG2PWM(tilt);
+void SSCDriver::OutputServoTail(float pan, float tilt) {
+  uint16_t panPWM = DEG2PWM(pan);
+  uint16_t tltPWM = DEG2PWM(tilt);
   uint8_t data[] = {
       cHeadPanPin  + 0x80,
-      static_cast<uint8_t>(wPanSSCV >> 8u),
-      static_cast<uint8_t>(wPanSSCV & 0xffu),
+      static_cast<uint8_t>(panPWM >> 8u),
+      static_cast<uint8_t>(panPWM & 0xffu),
       cHeadTiltPin  + 0x80,
-      static_cast<uint8_t>(wTiltSSCV >> 8u),
-      static_cast<uint8_t>(wTiltSSCV & 0xffu),
+      static_cast<uint8_t>(tltPWM >> 8u),
+      static_cast<uint8_t>(tltPWM & 0xffu),
+  };
+  if (write(fd, data, sizeof(data)) < 0){
+    perror("Error: Failed to write to the SSC");
+  }
+}
+
+/**
+ * updates the mandibles
+ * @param left Left mandible angle in degrees.
+ * @param right Right mandible angle in degrees.
+ */
+void SSCDriver::OutputServoMandibles(float left, float right) {
+  uint16_t leftPWM = DEG2PWM(-left);
+  uint16_t rightPWM = DEG2PWM(-right);
+
+  uint8_t data[] = {
+      cHeadPanPin  + 0x80,
+      static_cast<uint8_t>(leftPWM >> 8u),
+      static_cast<uint8_t>(leftPWM & 0xffu),
+      cHeadTiltPin  + 0x80,
+      static_cast<uint8_t>(rightPWM >> 8u),
+      static_cast<uint8_t>(rightPWM & 0xffu),
   };
   if (write(fd, data, sizeof(data)) < 0){
     perror("Error: Failed to write to the SSC");
@@ -151,32 +162,10 @@ void SSCDriver::OutputServo(int idx, uint16_t duty) {
   }
 }
 
-void SSCDriver::OutputServoAngle(int idx, short angle) {
+void SSCDriver::OutputServoAngle(int idx, float angle) {
   OutputServo(idx, DEG2PWM(angle));
 }
 
-/**
- * updates the mandibles
- * @param left Left mandible angle in degrees. (1 decimal)
- * @param right Right mandible angle in degrees. (1 decimal)
- */
-void SSCDriver::OutputServoInfoMandibles(short left, short right) {
-  uint16_t wLeftSSCV = DEG2PWM(-left);
-  uint16_t wRightSSCV = DEG2PWM(-right);
-
-  uint8_t data[] = {
-      cHeadPanPin  + 0x80,
-      static_cast<uint8_t>(wLeftSSCV >> 8u),
-      static_cast<uint8_t>(wLeftSSCV & 0xffu),
-      cHeadTiltPin  + 0x80,
-      static_cast<uint8_t>(wRightSSCV >> 8u),
-      static_cast<uint8_t>(wRightSSCV & 0xffu),
-  };
-  if (write(fd, data, sizeof(data)) < 0){
-    perror("Error: Failed to write to the SSC");
-  }
-  this->Commit(wMandibleTime);
-}
 
 void SSCDriver::Commit(uint16_t wMoveTime) const {
   uint8_t data[] = {

@@ -1,16 +1,14 @@
-#include <iostream>
-#include <sstream>
 #include <unistd.h>
-#include "PS2X_lib.h"
-#include "SSCDriver.h"
-#include "ServoOffsets.h"
-
 #include<stdio.h>
 #include<fcntl.h>
-#include<unistd.h>
 #include<termios.h>
 #include<string.h>
 #include<stdlib.h>
+
+#include "PS2X_lib.h"
+#include "SSCDriver.h"
+#include "ServoOffsets.h"
+#include "HexaPod.h"
 
 using namespace std;
 
@@ -128,6 +126,43 @@ int calibrate() {
   return 0;
 }
 
+int ik() {
+  SPIDevice spi(1,1);
+  spi.setSpeed(100000);
+  spi.setMode(SPIDevice::MODE3);
+  spi.setLSBFirst(1);
+  spi.debugDump();
+  PS2X ps2x(&spi);
+  ps2x.SetADMode(true, true);
+
+  SSCDriver driver{};
+  if (driver.Init() < 0) {
+    return -1;
+  }
+
+  HexaPod pod{};
+
+  while (true) {
+    ps2x.Poll();
+    ps2x.GetKeyState();
+    if (ps2x.state.btnStt) {
+      driver.FreeServos();
+      return 0;
+    }
+
+    pod.leg.x += (ps2x.state.joyLX - 128) / 100.0f;
+    pod.leg.y -= (ps2x.state.joyLY - 127) / 100.0f;
+    pod.leg.z -= (ps2x.state.joyRY - 127) / 100.0f;
+
+    pod.IK();
+
+    driver.OutputServoLeg(0, pod.leg.ac, pod.leg.af, pod.leg.at);
+    driver.Commit(10);
+    usleep(10*1000);
+  }
+
+}
+
 int main(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ps2")) {
     return ps2_test();
@@ -141,6 +176,9 @@ int main(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "cali")) {
     return calibrate();
   }
-  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali)\n", argv[0]);
+  if (argc > 1 && !strcmp(argv[1], "ik")) {
+    return ik();
+  }
+  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik)\n", argv[0]);
   return -1;
 }

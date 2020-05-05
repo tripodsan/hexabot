@@ -13,6 +13,8 @@ const static uint8_t ALL_SERVOS_PINS[] = {
     cLMandPin, cRMandPin, cHeadPanPin, cHeadTiltPin, cHeadRotPin, cTailPanPin, cTailTiltPin
 };
 
+#define DEG2PWM(deg) ((uint16_t)((deg) * 2000.0f / 180.0f + 1500.0f))
+
 class SSCDriver {
 public:
   int Init();
@@ -21,15 +23,15 @@ public:
 
   void OutputServo(int idx, uint16_t duty);
 
-  void OutputServoAngle(int idx, short angle);
+  void OutputServoAngle(int idx, float angle);
 
-  void OutputServoInfoForLeg(int legIndex, short sCoxaAngle1, short sFemurAngle1, short sTibiaAngle1) const;
+  void OutputServoLeg(int legIndex, float coxa, float femur, float tibia) const;
 
-  void OutputServoInfoHead(short pan, short tilt, short rot);
+  void OutputServoHead(float pan, float tilt, float rot);
 
-  void OutputServoInfoTail(short pan, short tilt);
+  void OutputServoTail(float pan, float tilt);
 
-  void OutputServoInfoMandibles(short left, short right);
+  void OutputServoMandibles(float left, float right);
 
   void Commit(uint16_t wMoveTime) const;
 
