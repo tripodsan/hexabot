@@ -68,7 +68,7 @@ void ServoOffsets::Run() {
   fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 
   printf("Find Servo Zeros.\n$-Exit, +- changes, *-change servo, <> - angles\n");
-  printf("    0-5 Chooses a leg, C-Coxa, F-Femur, T-Tibia\n");
+  printf("    0-5 Chooses a legs, C-Coxa, F-Femur, T-Tibia\n");
   printf("    6 Chooses a mandible, L-Left, R-Right\n");
   printf("    7 Chooses head, P-Pan, T-Tilt, R-Rot\n");
   printf("    8 Chooses tail, P-Pan, T-Tilt\n");
@@ -82,19 +82,7 @@ void ServoOffsets::Run() {
     if (idx != prevIdx) {
       prevIdx = idx;
       printf("Servo: %s (%d)\n", ServoName(idx), offsets[idx]);
-
-      int pwm = DEG2PWM(angle);
-
-      // Now lets wiggle the servo
-      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm + 100);
-      driver->Commit(100);
-      usleep(100 * 1000);
-      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm - 100);
-      driver->Commit(200);
-      usleep(200 * 1000);
-      driver->OutputServo(ALL_SERVOS_PINS[idx], pwm);
-      driver->Commit(100);
-      usleep(100 * 1000);
+      driver->WiggleServo(ALL_SERVOS_PINS[idx], angle);
     }
 
     if (read(STDIN_FILENO, &data, 1) > 0){

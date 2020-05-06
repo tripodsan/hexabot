@@ -126,12 +126,54 @@ int calibrate() {
   return 0;
 }
 
+void ik_loop(PS2X *ps2, SSCDriver *driver) {
+  HexaPod pod{};
+
+  int idx = 0;
+  int lastIdx = 0;
+  uint16_t buttons = 0;
+  while (true) {
+    ps2->Poll();
+    ps2->GetKeyState();
+    if (ps2->state.btnStt) {
+      driver->FreeServos();
+      break;
+    }
+    if (~ps2->state.buttons && !buttons) {
+      if (ps2->state.btnCir) {
+        idx = (idx + 1) % 6;
+      }
+      if (ps2->state.btnSqr) {
+        idx = (idx + 5) % 6;
+      }
+    }
+    buttons = ~ps2->state.buttons;
+
+    if (idx != lastIdx) {
+      lastIdx = idx;
+      driver->WiggleServo(ALL_SERVOS_PINS[idx*3], pod.legs[idx].ac);
+    }
+
+    pod.legs[idx].x += (ps2->state.joyLX - 128) / 100.0f;
+    pod.legs[idx].y -= (ps2->state.joyLY - 127) / 100.0f;
+    pod.legs[idx].z -= (ps2->state.joyRY - 127) / 100.0f;
+
+    pod.legs[idx].IK();
+
+    driver->OutputServoLeg(idx, pod.legs[idx].ac, pod.legs[idx].af, pod.legs[idx].at);
+    driver->Commit(10);
+    usleep(10*1000);
+  }
+
+}
+
 int ik() {
   SPIDevice spi(1,1);
   spi.setSpeed(100000);
   spi.setMode(SPIDevice::MODE3);
   spi.setLSBFirst(1);
   spi.debugDump();
+
   PS2X ps2x(&spi);
   ps2x.SetADMode(true, true);
 
@@ -140,27 +182,8 @@ int ik() {
     return -1;
   }
 
-  HexaPod pod{};
-
-  while (true) {
-    ps2x.Poll();
-    ps2x.GetKeyState();
-    if (ps2x.state.btnStt) {
-      driver.FreeServos();
-      return 0;
-    }
-
-    pod.leg.x += (ps2x.state.joyLX - 128) / 100.0f;
-    pod.leg.y -= (ps2x.state.joyLY - 127) / 100.0f;
-    pod.leg.z -= (ps2x.state.joyRY - 127) / 100.0f;
-
-    pod.IK();
-
-    driver.OutputServoLeg(0, pod.leg.ac, pod.leg.af, pod.leg.at);
-    driver.Commit(10);
-    usleep(10*1000);
-  }
-
+  ik_loop(&ps2x, &driver);
+  return 0;
 }
 
 int main(int argc, char *argv[]){

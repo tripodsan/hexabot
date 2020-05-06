@@ -20,24 +20,34 @@
 #define APOD_HEXAPOD_H
 
 
-typedef struct HexLeg {
-  float x;  // foot position x
-  float y;  // foot position y
-  float z;  // foot position z
+class HexLeg {
+public:
+  HexLeg(const int idx);
+
+public:
+  const int idx;
+  const float dx, dy, dz; // position from body center
+  const float cmin, cmax, fmin, fmax, tmin, tmax; // min/max angles for servos
+  const float acoxa; // coxa angle
+
+  float x, y, z;  // foot position
   float ac; // coxa angle
   float af; // femur angle
   float at; // tibia angle
-} HexLeg_t ;
+
+  void Reset();
+  void IK();
+
+};
 
 class HexaPod {
 public:
   HexaPod();
 
 public:
+  void Reset();
   void IK();
-
-  HexLeg_t leg;
-
+  HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
 };
 
 

@@ -33,6 +33,8 @@ public:
 
   void OutputServoMandibles(float left, float right);
 
+  void WiggleServo(int idx, float angle);
+
   void Commit(uint16_t wMoveTime) const;
 
   void FreeServos() const;

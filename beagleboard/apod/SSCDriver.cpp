@@ -71,6 +71,19 @@ float SSCDriver::ReadVoltage() {
   return v;
 }
 
+void SSCDriver::WiggleServo(int idx, float angle) {
+  int pwm = DEG2PWM(angle);
+  OutputServo(idx, pwm + 100);
+  Commit(100);
+  usleep(100 * 1000);
+  OutputServo(idx, pwm - 100);
+  Commit(200);
+  usleep(200 * 1000);
+  OutputServo(idx, pwm);
+  Commit(100);
+  usleep(100 * 1000);
+}
+
 void SSCDriver::OutputServoLeg(int legIdx, float coxa, float femur, float tibia) const {
   uint16_t coxaPWM  = DEG2PWM(coxa);
   uint16_t femurPWM = DEG2PWM(femur);
