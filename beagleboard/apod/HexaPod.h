@@ -37,7 +37,7 @@ public:
 
   void Reset();
   void IK();
-
+  void PowerOff();
 };
 
 class HexaPod {
@@ -48,6 +48,8 @@ public:
   void Reset();
   void IK();
   HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
+
+  void PowerOff();
 };
 
 

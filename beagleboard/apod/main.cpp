@@ -129,14 +129,13 @@ int calibrate() {
 void ik_loop(PS2X *ps2, SSCDriver *driver) {
   HexaPod pod{};
 
-  int idx = 0;
+  int idx = 1;
   int lastIdx = 0;
   uint16_t buttons = 0;
   while (true) {
     ps2->Poll();
     ps2->GetKeyState();
     if (ps2->state.btnStt) {
-      driver->FreeServos();
       break;
     }
     if (~ps2->state.buttons && !buttons) {
@@ -165,6 +164,14 @@ void ik_loop(PS2X *ps2, SSCDriver *driver) {
     usleep(10*1000);
   }
 
+  // power off
+  pod.PowerOff();
+  for (int i = 0; i < 6; i++) {
+    driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+  }
+  driver->Commit(600);
+  usleep(800*1000);
+  driver->FreeServos();
 }
 
 int ik() {

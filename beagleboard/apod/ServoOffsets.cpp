@@ -81,7 +81,7 @@ void ServoOffsets::Run() {
     float angle = angles[idx];
     if (idx != prevIdx) {
       prevIdx = idx;
-      printf("Servo: %s (%d)\n", ServoName(idx), offsets[idx]);
+      printf("Servo: %s (%d) %.2f°\n", ServoName(idx), offset, angle);
       driver->WiggleServo(ALL_SERVOS_PINS[idx], angle);
     }
 
@@ -171,7 +171,7 @@ void ServoOffsets::Run() {
     buttons = ~ps2->state.buttons;
 
     if (ps2->state.btnR1) {
-      angle += (float) (ps2->state.joyLY - 127) / 100.0f;
+      angle -= (float) (ps2->state.joyLY - 127) / 100.0f;
       usleep(20 * 1000);
     } else {
       usleep(100 * 1000);
@@ -182,7 +182,7 @@ void ServoOffsets::Run() {
     if (prevIdx == idx && offset != offsets[idx]) {
       offsets[idx] = offset;
       printf("    %d\n", offset);
-      driver->WriteOffset(idx, offset);
+      driver->WriteOffset(ALL_SERVOS_PINS[idx], offset);
     }
     if (prevIdx == idx && angle != angles[idx]) {
       angles[idx] = angle;

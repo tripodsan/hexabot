@@ -85,9 +85,17 @@ void SSCDriver::WiggleServo(int idx, float angle) {
 }
 
 void SSCDriver::OutputServoLeg(int legIdx, float coxa, float femur, float tibia) const {
-  uint16_t coxaPWM  = DEG2PWM(coxa);
-  uint16_t femurPWM = DEG2PWM(femur);
-  uint16_t tibiaPWM = DEG2PWM(tibia);
+  uint16_t coxaPWM, femurPWM, tibiaPWM;
+  if (legIdx >= 3) {
+    // the left servos are all mirrored...hence inverse the angle
+    coxaPWM  = DEG2PWM(-coxa);
+    femurPWM = DEG2PWM(-femur);
+    tibiaPWM = DEG2PWM(-tibia);
+  } else {
+    coxaPWM  = DEG2PWM(coxa);
+    femurPWM = DEG2PWM(femur);
+    tibiaPWM = DEG2PWM(tibia);
+  }
 
   uint8_t data[] = {
       static_cast<uint8_t>(cCoxaPin[legIdx] + 0x80),

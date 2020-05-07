@@ -71,6 +71,11 @@ void HexLeg::IK() {
   float cy = y - dy;
   float cz = z;
 
+  // flip x for left legs
+  if (idx >= 3) {
+    cx = -cx;
+  }
+
   // first rotate x/y for coxa angle
   float c = atan2f(cy, cx) - acoxa;
   ac = RAD2DEG(std::min(std::max(c, cmin), cmax));
@@ -82,10 +87,10 @@ void HexLeg::IK() {
   float d = (h2 - L1*L1 - L2*L2) / (2.0f * L1 * L2);
 
   // point is out of reach, limit d.
-  if (d > 0.95f) {
-    d = 0.95f;
-  } else if (d < -0.95f) {
-    d = -0.95f;
+  if (d > 0.7f) {
+    d = 0.7f;
+  } else if (d < -0.7f) {
+    d = -0.7f;
   }
 
   float k1 = L1 + L2 * d;
@@ -96,10 +101,15 @@ void HexLeg::IK() {
 
   af = RAD2DEG(std::min(std::max(a, fmin), fmax));
   at = RAD2DEG(std::min(std::max(b, tmin), tmax));
-//
-//  printf("x:%.2f, y:%.2f, z:%.2f, c:%.2f, a:%.2f, b:%.2f, c:%.2f, d:%.4f, a1:%f, a2:%f\n",
-//         x, y, z, RAD2DEG(c), RAD2DEG(a), RAD2DEG(b), RAD2DEG(c), d, a1, a2);
-//
+
+//  printf("x:%.2f, y:%.2f, z:%.2f, c:%.2f, a:%.2f, b:%.2f, c:%.2f, d:%.4f\n",
+//         x, y, z, RAD2DEG(c), RAD2DEG(a), RAD2DEG(b), RAD2DEG(c), d);
+}
+
+void HexLeg::PowerOff() {
+  ac = 0;
+  af = RAD2DEG(fmax);
+  at = RAD2DEG(tmax);
 }
 
 HexaPod::HexaPod() {
@@ -115,5 +125,11 @@ void HexaPod::IK() {
 void HexaPod::Reset() {
   for (auto & leg : legs) {
     leg.Reset();
+  }
+}
+
+void HexaPod::PowerOff() {
+  for (auto & leg : legs) {
+    leg.PowerOff();
   }
 }

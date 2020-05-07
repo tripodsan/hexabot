@@ -192,7 +192,7 @@
 #define cLRInitPosY     -CHexInitXYSin45 + cLROffsetY
 #define cLRInitPosZ     CHexInitZ
 
-#define cLMInitPosX     cHexInitXY + cLMOffsetX
+#define cLMInitPosX     -cHexInitXY + cLMOffsetX
 #define cLMInitPosY     cLMOffsetY
 #define cLMInitPosZ     CHexInitZ
 
