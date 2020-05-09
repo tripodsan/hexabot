@@ -27,6 +27,16 @@ class Gait {
 public:
   Gait(const char *name, int len,  float* seq, const int (&phase)[6], uint16_t stepTime);
 
+  /**
+   * Creates a gait pattern.
+   * @param name Name of the pattern
+   * @param rs Number of return stroke steps
+   * @param ps Number of power stroke steps
+   * @param phase Phase array for the legs
+   * @param stepTime Servo step time.
+   */
+  Gait(const char *name, int rs, int ps, const int (&phase)[6], uint16_t stepTime);
+
   ~Gait();
 
   const char* name;

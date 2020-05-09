@@ -50,46 +50,144 @@ Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)
   }
 }
 
+Gait::Gait(const char *name, const int rs, const int ps, const int (&phase)[6], uint16_t stepTime) {
+  this->len = rs + ps;
+  this->name = name;
+  this->stepTime = stepTime;
+  this->seq = (Vec3f *) calloc(len, sizeof(Vec3f));
+  for (int i = 0; i < 6; i++) {
+    this->phase[i] = phase[i];
+  }
+  if (rs < 2) {
+    printf("ERROR: rs needs to be at least 2. (%s gait)\n", name);
+    return;
+  }
+  // return stroke
+  float dy = 2.0f / (float) rs;
+  for (int i = 0 ; i < rs; i++) {
+    this->seq[i].x = 0.0f;
+    this->seq[i].y = -1.0f + (float) i*dy;
+    this->seq[i].z = 0.0f;
+  }
+  // power stroke
+  dy = 2.0f / (float) ps;
+  for (int i = rs ; i < rs; i++) {
+    this->seq[i].x = 0.0f;
+    this->seq[i].y = -1.0f + (float) i*dy;
+    this->seq[i].z = 0.0f;
+  }
+
+}
+
 Gait::~Gait() {
   free(this->seq);
   this->seq = nullptr;
 }
 
+/**
+ * Fast Wave Gait:
+ * RF: **----
+ * RM: -**---
+ * RR: --**--
+ * LF: ---**-
+ * LM: ----**
+ * LR: *----*
+ */
 static Gait WAVE_6 =
-    Gait("wave 6", 6,
+    Gait("fast wave", 6,
          (float[]) {
-             0,   0,    0,  0,  0,   0,
-             1, 0.3, -0.3, -1, -0.3, 0.3,
-             0,   0,    0,  0,  1,   1,
+             0,   0,   0,   0,    0,  0.0,
+             0, 1.0, 0.5, 0.0, -0.5, -1.0,
+             1,   0,   0,   0,    0,    0
          },
          {
              0, 1, 2, 3, 4, 5
          },
          200);
 
+/**
+ * Slow Wave Gait:
+ * RF: **----------
+ * RM: --**--------
+ * RR: ----**------
+ * LF: ------**----
+ * LM: --------**--
+ * LR: ----------**
+ */
 static Gait WAVE_12 =
-    Gait("wave 12", 12,
+    Gait("slow wave", 12,
          (float[]) {
-             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-             0.5, 1, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0,   0.0, 0.0, 0.0,
+               0, 1, 0.8, 0.6, 0.4, 0.2, 0.0, -0.2, -0.4, -0.6, -0.8, -1,
+               1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
          },
          {
              0, 2, 4, 6, 8, 10
          },
-         100);
+         200);
 
-static Gait TRIPOD =
-    Gait("tripod", 6,
+/**
+ * Ripple Gait:
+ * RF: **----
+ * RM: --**--
+ * RR: ----**
+ * LF: -**---
+ * LM: --**--
+ * LR: ---**-
+ */
+static Gait RIPPLE =
+    Gait("ripple", 6,
          (float[]) {
-             0, 0, 0, 0, 0, 0,
-             0, 0, 0, 0, 0, 0,
-             1, 1, 0, 0, 0, 0,
+               0.0, 0.0, 0.0, 0.0,  0.0,  0.0,
+               0.0, 1.0, 0.5, 0.0, -0.5, -1.0,
+                 1,   0,   0,   0,    0,    0,
+         },
+         {
+             0, 2, 4, 1, 3, 5
+         },
+         200);
+
+/**
+ * Slow Tripod Gait:
+ * RF: ****----
+ * RM: ----****
+ * RR: ****----
+ * LF: ----****
+ * LM: ****----
+ * LR: ----****
+ */
+static Gait TRIPOD =
+    Gait("slow tripod", 8,
+         (float[]) {
+              0.0,  0.0, 0.0, 0.0,  0.0, 0.0,  0.0,  0.0,
+             -1.0, -0.5, 0.0, 0.5,  1.0, 0.5,  0.0, -0.5,
+              0.0,  0.5, 1.0, 0.5,  0.0, 0.0,  0.0,  0.0
+         },
+         {
+             0, 4, 0, 4, 0, 4
+         },
+         200);
+
+/**
+ * Fast Tripod Gait:
+ * RF: **--
+ * RM: --**
+ * RR: **--
+ * LF: --**
+ * LM: **--
+ * LR: --**
+ */
+static Gait TRIPOD_FAST =
+    Gait("fast tripod", 4,
+         (float[]) {
+              0.0, 0.0, 0.0, 0.0,
+              0.0, 1.0, 0.0,-1.0,
+              1.0, 0.0, 0.0, 0.0,
          },
          {
              0, 2, 0, 2, 0, 2
          },
-         100);
+         200);
 
 
 /*
@@ -100,11 +198,13 @@ static Gait TRIPOD =
  ╰───────╯
  */
 GaitSequencer::GaitSequencer() {
-  numGaits = 3;
+  numGaits = 5;
   gaits = (Gait**) calloc(numGaits, sizeof(void*));
   gaits[0] = &WAVE_6;
   gaits[1] = &WAVE_12;
-  gaits[2] = &TRIPOD;
+  gaits[2] = &TRIPOD_FAST;
+  gaits[3] = &TRIPOD;
+  gaits[4] = &RIPPLE;
   gait = gaits[0];
 }
 
