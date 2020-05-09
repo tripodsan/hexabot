@@ -4,6 +4,7 @@
 #include<termios.h>
 #include<string.h>
 #include<stdlib.h>
+#include <robotcontrol.h>
 
 #include "PS2X_lib.h"
 #include "SSCDriver.h"
@@ -174,6 +175,39 @@ void ik_loop(PS2X *ps2, SSCDriver *driver) {
   driver->FreeServos();
 }
 
+void gait_loop(PS2X *ps2, SSCDriver *driver) {
+  HexaPod pod{};
+
+  while (rc_get_state() != EXITING) {
+    pod.Step();
+    for (int i=0; i < 6; i++) {
+      driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+    }
+    driver->Commit(pod.gait.gait->stepTime);
+    usleep(pod.gait.gait->stepTime*1000);
+
+    char data;
+    while (read(STDIN_FILENO, &data, 1) <= 0) {
+      printf("read: %c\n", data);
+    }
+    if (data >= '0' && data <= '9') {
+      pod.gait.Select(data - '0');
+    }
+    if (data == '$') {
+      rc_set_state(EXITING);
+    }
+  }
+
+  // power off
+  pod.PowerOff();
+  for (int i = 0; i < 6; i++) {
+    driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+  }
+  driver->Commit(600);
+  usleep(800*1000);
+  driver->FreeServos();
+}
+
 int ik() {
   SPIDevice spi(1,1);
   spi.setSpeed(100000);
@@ -193,7 +227,26 @@ int ik() {
   return 0;
 }
 
-int main(int argc, char *argv[]){
+int gait() {
+  SPIDevice spi(1,1);
+  spi.setSpeed(100000);
+  spi.setMode(SPIDevice::MODE3);
+  spi.setLSBFirst(1);
+  spi.debugDump();
+
+  PS2X ps2x(&spi);
+  ps2x.SetADMode(true, true);
+
+  SSCDriver driver{};
+  if (driver.Init() < 0) {
+    return -1;
+  }
+
+  gait_loop(&ps2x, &driver);
+  return 0;
+}
+
+int run(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ps2")) {
     return ps2_test();
   }
@@ -209,6 +262,25 @@ int main(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ik")) {
     return ik();
   }
-  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik)\n", argv[0]);
+  if (argc > 1 && !strcmp(argv[1], "gait")) {
+    return gait();
+  }
+  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik|gait)\n", argv[0]);
   return -1;
 }
+
+int main(int argc, char *argv[]) {
+  if (rc_kill_existing_process(2.0) < -2) return -1;
+
+  // start signal handler so we can exit cleanly
+  if (rc_enable_signal_handler() == -1) {
+    fprintf(stderr, "ERROR: failed to start signal handler\n");
+    return -1;
+  }
+  rc_make_pid_file();
+  rc_set_state(RUNNING);
+  int ret = run(argc, argv);
+  rc_remove_pid_file();  // remove pid file LAST
+  return ret;
+}
+

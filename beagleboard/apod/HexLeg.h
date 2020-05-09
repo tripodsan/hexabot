@@ -16,26 +16,30 @@
  *
  */
 
-#ifndef APOD_HEXAPOD_H
-#define APOD_HEXAPOD_H
+#ifndef APOD_HEXLEG_H
+#define APOD_HEXLEG_H
 
-#include "HexLeg.h"
-#include "GaitSequencer.h"
+#include "globals.h"
 
-class HexaPod {
+class HexLeg {
 public:
-  HexaPod();
+  HexLeg(const int idx);
 
 public:
+  const int idx;
+  const float ox, oy, oz; // position from body center
+  const float cmin, cmax, fmin, fmax, tmin, tmax; // min/max angles for servos
+  const float acoxa; // coxa angle
+
+  float x, y, z;  // (initial) foot position
+  float dx, dy, dz; // delta position
+  float ac; // coxa angle
+  float af; // femur angle
+  float at; // tibia angle
+
   void Reset();
   void IK();
   void PowerOff();
-  void Step();
-
-  HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
-
-  GaitSequencer gait;
 };
 
-
-#endif //APOD_HEXAPOD_H
+#endif //APOD_HEXLEG_H

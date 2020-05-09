@@ -16,26 +16,13 @@
  *
  */
 
-#ifndef APOD_HEXAPOD_H
-#define APOD_HEXAPOD_H
+#ifndef APOD_GLOBALS_H
+#define APOD_GLOBALS_H
 
-#include "HexLeg.h"
-#include "GaitSequencer.h"
+typedef struct {
+  float x;
+  float y;
+  float z;
+} Vec3f;
 
-class HexaPod {
-public:
-  HexaPod();
-
-public:
-  void Reset();
-  void IK();
-  void PowerOff();
-  void Step();
-
-  HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
-
-  GaitSequencer gait;
-};
-
-
-#endif //APOD_HEXAPOD_H
+#endif //APOD_GLOBALS_H
