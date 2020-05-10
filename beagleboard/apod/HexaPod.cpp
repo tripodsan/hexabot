@@ -20,21 +20,21 @@
 HexaPod::HexaPod() {
   Reset();
   gait.Select(0);
-  gait.LegLiftHeight = 60;
+  gait.legLiftHeight = 60;
 }
 
 void HexaPod::Step() {
-  Vec3f travel;
-  travel.x = 0;
-  travel.y = 60;
-  travel.z = 0;
+  Vec3f v;
+  v.x = 0;
+  v.y = 100; // seems to be max for tripod
+  v.z = 0;
 
-  gait.Seq(&travel);
+  gait.Step(&v);
 
   for (int i = 0; i < 6; i++) {
-    legs[i].dx = gait.GaitPosX[i];
-    legs[i].dy = gait.GaitPosY[i];
-    legs[i].dz = gait.GaitPosZ[i];
+    legs[i].dx = gait.pos[i].x;
+    legs[i].dy = gait.pos[i].y;
+    legs[i].dz = gait.pos[i].z;
     legs[i].IK();
   }
 

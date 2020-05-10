@@ -28,7 +28,7 @@
 #define  cLM      4
 #define  cLF      5
 
-#define cTravelDeadZone 4.0f // threshold above which a movement is required.
+#define movementThreshold 4.0f // threshold above which a movement is required.
 
 Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)[6], uint16_t stepTime) {
   this->name = name;
@@ -63,20 +63,30 @@ Gait::Gait(const char *name, const int rs, const int ps, const int (&phase)[6], 
     return;
   }
   // return stroke
-  float dy = 2.0f / (float) rs;
+  float dy = 1.0f / (float) rs;
+  float dz = M_PI / (float) rs;
   for (int i = 0 ; i < rs; i++) {
     this->seq[i].x = 0.0f;
-    this->seq[i].y = -1.0f + (float) i*dy;
-    this->seq[i].z = 0.0f;
+    this->seq[i].y = -0.5f + ((float) i)*dy;
+
+    this->seq[i].z = sinf(((float) i) * dz);
   }
   // power stroke
-  dy = 2.0f / (float) ps;
-  for (int i = rs ; i < rs; i++) {
-    this->seq[i].x = 0.0f;
-    this->seq[i].y = -1.0f + (float) i*dy;
-    this->seq[i].z = 0.0f;
+  dy = 1.0f / (float) ps;
+  for (int i = 0 ; i < ps; i++) {
+    this->seq[i + rs].x = 0.0f;
+    this->seq[i + rs].y = 0.5f - ((float) i)*dy;
+    this->seq[i + rs].z = 0.0f;
   }
-
+  printf("Gait: %s\n", name);
+  for (int i = 0; i < len; i++) {
+    printf("%5.2f ", this->seq[i].y);
+  }
+  printf("\n");
+  for (int i = 0; i < len; i++) {
+    printf("%5.2f ", this->seq[i].z);
+  }
+  printf("\n");
 }
 
 Gait::~Gait() {
@@ -85,28 +95,7 @@ Gait::~Gait() {
 }
 
 /**
- * Fast Wave Gait:
- * RF: **----
- * RM: -**---
- * RR: --**--
- * LF: ---**-
- * LM: ----**
- * LR: *----*
- */
-static Gait WAVE_6 =
-    Gait("fast wave", 6,
-         (float[]) {
-             0,   0,   0,   0,    0,  0.0,
-             0, 1.0, 0.5, 0.0, -0.5, -1.0,
-             1,   0,   0,   0,    0,    0
-         },
-         {
-             0, 1, 2, 3, 4, 5
-         },
-         200);
-
-/**
- * Slow Wave Gait:
+ * Wave Gait:
  * RF: **----------
  * RM: --**--------
  * RR: ----**------
@@ -114,17 +103,24 @@ static Gait WAVE_6 =
  * LM: --------**--
  * LR: ----------**
  */
-static Gait WAVE_12 =
-    Gait("slow wave", 12,
-         (float[]) {
-               0, 0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0,   0.0, 0.0, 0.0,
-               0, 1, 0.8, 0.6, 0.4, 0.2, 0.0, -0.2, -0.4, -0.6, -0.8, -1,
-               1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-         },
-         {
-             0, 2, 4, 6, 8, 10
-         },
-         200);
+static Gait WAVE = Gait("wave", 2, 10, {0, 2, 4, 6, 8, 10}, 100);
+
+/**
+ * Slow Wave Gait:
+ */
+static Gait WAVE_SLOW = Gait("wave slow", 4, 20, {0, 4, 8, 12, 16, 20}, 100);
+
+/**
+ * Half Wave Gait:
+ * RF: ****--------
+ * RM: ----****----
+ * RR: --------****
+ * LF: ****--------
+ * LM: ----****----
+ * LR: --------****
+ */
+static Gait WAVE_SYNC = Gait("wave sync", 4, 8, {0, 4, 8, 0, 4, 8}, 200);
+
 
 /**
  * Ripple Gait:
@@ -132,41 +128,21 @@ static Gait WAVE_12 =
  * RM: --**--
  * RR: ----**
  * LF: -**---
- * LM: --**--
- * LR: ---**-
+ * LM: ---**-
+ * LR: *----*
  */
-static Gait RIPPLE =
-    Gait("ripple", 6,
-         (float[]) {
-               0.0, 0.0, 0.0, 0.0,  0.0,  0.0,
-               0.0, 1.0, 0.5, 0.0, -0.5, -1.0,
-                 1,   0,   0,   0,    0,    0,
-         },
-         {
-             0, 2, 4, 1, 3, 5
-         },
-         200);
+static Gait RIPPLE = Gait("ripple", 2, 4, {0, 2, 4, 1, 3, 5}, 100);
 
 /**
- * Slow Tripod Gait:
- * RF: ****----
- * RM: ----****
- * RR: ****----
- * LF: ----****
- * LM: ****----
- * LR: ----****
+ * Slow Ripple Gait:
+ * RF: ****--------
+ * RM: ----****----
+ * RR: --------****
+ * LF: --****------
+ * LM: ------****--
+ * LR: **--------**
  */
-static Gait TRIPOD =
-    Gait("slow tripod", 8,
-         (float[]) {
-              0.0,  0.0, 0.0, 0.0,  0.0, 0.0,  0.0,  0.0,
-             -1.0, -0.5, 0.0, 0.5,  1.0, 0.5,  0.0, -0.5,
-              0.0,  0.5, 1.0, 0.5,  0.0, 0.0,  0.0,  0.0
-         },
-         {
-             0, 4, 0, 4, 0, 4
-         },
-         200);
+static Gait RIPPLE_SLOW = Gait("ripple slow", 4, 8, {0, 4, 8, 2, 6, 10}, 100);
 
 /**
  * Fast Tripod Gait:
@@ -177,34 +153,30 @@ static Gait TRIPOD =
  * LM: **--
  * LR: --**
  */
-static Gait TRIPOD_FAST =
-    Gait("fast tripod", 4,
-         (float[]) {
-              0.0, 0.0, 0.0, 0.0,
-              0.0, 1.0, 0.0,-1.0,
-              1.0, 0.0, 0.0, 0.0,
-         },
-         {
-             0, 2, 0, 2, 0, 2
-         },
-         200);
+static Gait TRIPOD = Gait("tripod", 2, 2, {0, 2, 0, 2, 0, 2}, 100);
 
-
-/*
- ╭───────╮
- │5     2│
- │4     1│
- │3     0│
- ╰───────╯
+/**
+ * Slow Tripod Gait:
+ * RF: **********----------
+ * RM: ----------**********
+ * RR: **********----------
+ * LF: ----------**********
+ * LM: **********----------
+ * LR: ----------**********
  */
+static Gait TRIPOD_SLOW = Gait("tripod slow", 10, 10, {0, 10, 0, 10, 0, 10}, 50);
+
+
 GaitSequencer::GaitSequencer() {
-  numGaits = 5;
+  numGaits = 7;
   gaits = (Gait**) calloc(numGaits, sizeof(void*));
-  gaits[0] = &WAVE_6;
-  gaits[1] = &WAVE_12;
-  gaits[2] = &TRIPOD_FAST;
+  gaits[0] = &WAVE;
+  gaits[1] = &WAVE_SLOW;
+  gaits[2] = &WAVE_SYNC;
   gaits[3] = &TRIPOD;
-  gaits[4] = &RIPPLE;
+  gaits[4] = &TRIPOD_SLOW;
+  gaits[5] = &RIPPLE;
+  gaits[6] = &RIPPLE_SLOW;
   gait = gaits[0];
 }
 
@@ -216,226 +188,33 @@ void GaitSequencer::Select(int nr) {
   gait = gaits[nr];
   step = 0;
   printf("Gait: %s (%d steps)\n", gait->name, gait->len);
-  return;
-
-  //Gait selector
-  switch (nr) {
-    case 0:
-      // ripple Gait 12 steps
-      printf("Gait: ripple 12\n");
-      GaitLegNr[cLR] = 1;
-      GaitLegNr[cRF] = 3;
-      GaitLegNr[cLM] = 5;
-      GaitLegNr[cRR] = 7;
-      GaitLegNr[cLF] = 9;
-      GaitLegNr[cRM] = 11;
-
-      NrLiftedPos = 3;
-      HalfLiftHeight = 3;
-      TLDivFactor = 8;
-      StepsInGait = 12;
-      NomGaitSpeed = 70;
-      break;
-    case 1:
-      printf("Gait: tripod 8\n");
-      // Tripod 8 steps
-      GaitLegNr[cLR] = 5;
-      GaitLegNr[cRF] = 1;
-      GaitLegNr[cLM] = 1;
-      GaitLegNr[cRR] = 1;
-      GaitLegNr[cLF] = 5;
-      GaitLegNr[cRM] = 5;
-
-      NrLiftedPos = 3;
-      HalfLiftHeight = 3;
-      TLDivFactor = 4;
-      StepsInGait = 8;
-      NomGaitSpeed = 70;
-      break;
-    case 2:
-      printf("Gait: tripod 12\n");
-      // triple Tripod 12 step
-      GaitLegNr[cRF] = 3;
-      GaitLegNr[cLM] = 4;
-      GaitLegNr[cRR] = 5;
-      GaitLegNr[cLF] = 9;
-      GaitLegNr[cRM] = 10;
-      GaitLegNr[cLR] = 11;
-
-      NrLiftedPos = 3;
-      HalfLiftHeight = 3;
-      TLDivFactor = 8;
-      StepsInGait = 12;
-      NomGaitSpeed = 60;
-      break;
-    case 3:
-      printf("Gait: tripod 16/5\n");
-      // Triple Tripod 16 steps, use 5 lifted positions
-      GaitLegNr[cRF] = 4;
-      GaitLegNr[cLM] = 5;
-      GaitLegNr[cRR] = 6;
-      GaitLegNr[cLF] = 12;
-      GaitLegNr[cRM] = 13;
-      GaitLegNr[cLR] = 14;
-
-      NrLiftedPos = 5;
-      HalfLiftHeight = 1;
-      TLDivFactor = 10;
-      StepsInGait = 16;
-      NomGaitSpeed = 60;
-      break;
-    case 4:
-      printf("Gait: wave\n");
-      //Wave 24 steps
-      GaitLegNr[cLR] = 1;
-      GaitLegNr[cRF] = 21;
-      GaitLegNr[cLM] = 5;
-
-      GaitLegNr[cRR] = 13;
-      GaitLegNr[cLF] = 9;
-      GaitLegNr[cRM] = 17;
-
-      NrLiftedPos = 3;
-      HalfLiftHeight = 3;
-      TLDivFactor = 20;
-      StepsInGait = 24;
-      NomGaitSpeed = 70;
-      break;
-    case 5:
-      printf("Gait: test\n");
-      // test 12 steps
-      GaitLegNr[cRR] = 1;
-      GaitLegNr[cRM] = 2;
-      GaitLegNr[cRF] = 3;
-
-      GaitLegNr[cLF] = 4;
-      GaitLegNr[cLM] = 5;
-      GaitLegNr[cLR] = 6;
-
-      NrLiftedPos = 1;
-      HalfLiftHeight = 0;
-      TLDivFactor = 20;
-      StepsInGait = 6;
-      NomGaitSpeed = 70;
-
-      StepsInGait = 8;
-
-      break;
-  }
-  step = 0;
 }
 
-void GaitSequencer::Seq(Vec3f *travel) {
-  //Check if the Gait is in motion
-  TravelRequest = ((std::abs(travel->x) > cTravelDeadZone) ||
-                   (std::abs(travel->y) > cTravelDeadZone) ||
-                   (std::abs(travel->z) > cTravelDeadZone));
+void GaitSequencer::Step(Vec3f *v) {
+  bool moveCheck = ((std::abs(v->x) > movementThreshold) ||
+                    (std::abs(v->y) > movementThreshold) ||
+                    (std::abs(v->z) > movementThreshold));
 
-  //Clear values under the cTravelDeadZone
-  if (!TravelRequest) {
-    travel->x = 0;
-    travel->y = 0;
-    travel->z = 0;
+  //Clear values under the movements threshold
+  if (!moveCheck) {
+    v->x = 0;
+    v->y = 0;
+    v->z = 0;
   }
 
-  printf("Gait step: %d. tx:%.2f ty:%.2f tz:%.2f\n", step, travel->x, travel->y, travel->z);
+  printf("Gait step: %d. tx:%.2f ty:%.2f tz:%.2f\n", step, v->x, v->y, v->z);
   for (int i = 0; i < gait->len; i++) {
     printf("%f ", gait->seq[(step + i) % gait->len].z);
   }
   printf("\n");
 
-  if (NrLiftedPos == 5) {
-    LiftDivFactor = 4;
-  } else {
-    LiftDivFactor = 2;
-  }
-
-  //Calculate Gait sequence
-  for (int idx = 0; idx < 6; idx++) {
-    Step2(travel, idx);
-    printf("  leg %d. p:%d x:%.2f y:%.2f z:%.2f, r:%.2f\n", idx, gait->phase[idx], GaitPosX[idx], GaitPosY[idx], GaitPosZ[idx], GaitRotZ[idx]);
-
+  for (int i = 0; i < 6; i++) {
+    Vec3f *p = &gait->seq[(gait->phase[i] + step) % gait->len];
+    pos[i].x = v->x * p->x;
+    pos[i].y = v->y * p->y;
+    pos[i].z = legLiftHeight * p->z;
+    rot[i] = 0;
+    printf("  leg %d. p:%d x:%.2f y:%.2f z:%.2f, r:%.2f\n", i, gait->phase[i], pos[i].x, pos[i].y, pos[i].z, rot[i]);
   }
   step = (step + 1) % gait->len;
-}
-
-void GaitSequencer::Step2(Vec3f *travel, int idx) {
-  Vec3f *p = &gait->seq[(gait->phase[idx] + step) % gait->len];
-  GaitPosX[idx] = travel->x * p->x;
-  GaitPosZ[idx] = LegLiftHeight * p->z;
-  GaitPosY[idx] = travel->y * p->y;
-  GaitRotZ[idx] = 0;
-}
-
-void GaitSequencer::Step(Vec3f *travel, int idx) {
-  //Leg middle up position
-  //Gait in motion														  									Gait NOT in motion, return to home position
-  if ((TravelRequest && (NrLiftedPos == 1 || NrLiftedPos == 3 || NrLiftedPos == 5) &&
-       step == GaitLegNr[idx]) ||
-      (!TravelRequest && step == GaitLegNr[idx] && ((std::abs(GaitPosX[idx]) > 2) ||
-                                                    (std::abs(GaitPosY[idx]) > 2) ||
-                                                    (std::abs(GaitPosZ[idx]) > 2)))) { //Up
-    GaitPosX[idx] = 0;
-    GaitPosZ[idx] = LegLiftHeight;
-    GaitPosY[idx] = 0;
-    GaitRotZ[idx] = 0;
-  }
-    //Optional Half height Rear (2, 3, 5 lifted positions)
-  else if (((NrLiftedPos == 2 && step == GaitLegNr[idx]) || (NrLiftedPos >= 3 &&
-                                                             (step ==
-                                                                  GaitLegNr[idx] - 1 ||
-                                                              step == GaitLegNr[idx] +
-                                                                      (StepsInGait - 1))))
-           && TravelRequest) {
-    GaitPosX[idx] = -travel->x / LiftDivFactor;
-    GaitPosZ[idx] = 3 * LegLiftHeight / (3 + HalfLiftHeight);     //Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-    GaitPosY[idx] = -travel->y / LiftDivFactor;
-    GaitRotZ[idx] = -travel->z / LiftDivFactor;
-  }
-
-    // Optional Half height front (2, 3, 5 lifted positions)
-  else if ((NrLiftedPos >= 2) && (step == GaitLegNr[idx] + 1 ||
-                                  step == GaitLegNr[idx] - (StepsInGait - 1)) && TravelRequest) {
-    GaitPosX[idx] = travel->x / LiftDivFactor;
-    GaitPosZ[idx] = 3 * LegLiftHeight / (3 + HalfLiftHeight); // Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-    GaitPosY[idx] = travel->y / LiftDivFactor;
-    GaitRotZ[idx] = travel->z / LiftDivFactor;
-  }
-
-    //Optional Half height Rear 5 LiftedPos (5 lifted positions)
-  else if (((NrLiftedPos == 5 && (step == GaitLegNr[idx] - 2))) && TravelRequest) {
-    GaitPosX[idx] = -travel->x / 2;
-    GaitPosZ[idx] = LegLiftHeight / 2;
-    GaitPosY[idx] = -travel->y / 2;
-    GaitRotZ[idx] = -travel->z / 2;
-  }
-
-    //Optional Half height Front 5 LiftedPos (5 lifted positions)
-  else if ((NrLiftedPos == 5) && (step == GaitLegNr[idx] + 2 ||
-                                  step == GaitLegNr[idx] - (StepsInGait - 2)) && TravelRequest) {
-    GaitPosX[idx] = travel->x / 2;
-    GaitPosZ[idx] = LegLiftHeight / 2;
-    GaitPosY[idx] = travel->y / 2;
-    GaitRotZ[idx] = travel->z / 2;
-  }
-
-    //Leg front down position
-  else if ((step == GaitLegNr[idx] + NrLiftedPos ||
-            step == GaitLegNr[idx] - (StepsInGait - NrLiftedPos))
-           && GaitPosZ[idx] < 0) {
-    GaitPosX[idx] = travel->x / 2;
-    GaitPosY[idx] = travel->y / 2;
-    GaitRotZ[idx] = travel->z / 2;
-    GaitPosZ[idx] = 0;  //Only move leg down at once if terrain adaption is turned off
-  }
-
-    //Move body forward
-  else {
-    GaitPosX[idx] = GaitPosX[idx] - (travel->x / TLDivFactor);
-    GaitPosZ[idx] = 0;
-    GaitPosY[idx] = GaitPosY[idx] - (travel->y / TLDivFactor);
-    GaitRotZ[idx] = GaitRotZ[idx] - (travel->z / TLDivFactor);
-  }
-
-
 }

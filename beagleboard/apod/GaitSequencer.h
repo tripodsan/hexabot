@@ -28,7 +28,20 @@ public:
   Gait(const char *name, int len,  float* seq, const int (&phase)[6], uint16_t stepTime);
 
   /**
-   * Creates a gait pattern.
+   * Creates a gait pattern. The `rs` defines the number of steps a leg does a _return stroke_
+   * (leg lifted, moving forward).
+   * The `ps` defines the number of steps a leg does a _power stroke_ (leg on the ground,
+   * pushing backwards).
+   *
+   * The phase array defines the phase of each leg in respect to the sequence steps. the leg
+   * numbering is as follows:
+   *
+   *  ╭───^───╮
+   *  │5     2│
+   *  │4     1│
+   *  │3     0│
+   *  ╰───^───╯
+   *
    * @param name Name of the pattern
    * @param rs Number of return stroke steps
    * @param ps Number of power stroke steps
@@ -48,45 +61,54 @@ public:
 
 class GaitSequencer {
 public:
-  size_t numGaits;
-  Gait** gaits;
-  Gait* gait;
-
   GaitSequencer();
 
-  float LegLiftHeight; // input set by user
-
-
-
-
-
-  short NomGaitSpeed;    //Nominal speed of the gait
-  short TLDivFactor;         //Number of steps that a leg is on the floor while walking
-  short NrLiftedPos;         //Number of positions that a single leg is lifted [1-3]
-  float LiftDivFactor;       //Normaly: 2, when NrLiftedPos=5: 4
-
-  float HalfLiftHeight;      //If TRUE the outer positions of the ligted legs will be half height
-
-  bool TravelRequest;        //Temp to check if the gait is in motion
-  int StepsInGait;         //Number of steps in gait
-
-  int step;            //Actual Gait step
-
-  int GaitLegNr[6];        //Init position of the leg
-
-  int GaitLegNrIn;         //Input Number of the leg
-
-  float GaitPosX[6];         //Array containing Relative X position corresponding to the Gait
-  float GaitPosY[6];         //Array containing Relative Y position corresponding to the Gait
-  float GaitPosZ[6];         //Array containing Relative Z position corresponding to the Gait
-  float GaitRotZ[6];         //Array containing Relative Z rotation corresponding to the Gait
-
+  /**
+   * Select gait.
+   * @param nr
+   */
   void Select(int nr);
 
-  void Seq(Vec3f *travel);
+  /**
+   * Calculate next gait step. The `v` is a not very accurate velocity vector.
+   * It more or less specifies the distance the leg should travel within one
+   * gait sequence cycle.
+   *
+   * @param v Movement vector
+   */
+  void Step(Vec3f *v);
 
-  void Step(Vec3f *travel, int idx);
-  void Step2(Vec3f *travel, int idx);
+  /**
+   * Number of available gaits
+   */
+  size_t numGaits;
+
+  /**
+   * List of gaits
+   */
+  Gait** gaits;
+
+  /**
+   * Current gait
+   */
+  Gait* gait;
+
+  /**
+   * Leg height when lifted (input)
+   */
+  float legLiftHeight;
+
+  /**
+   * Current gait step
+   */
+  int step;
+
+  /**
+   * Calculated gait positions of the legs
+   */
+  Vec3f pos[6];
+  float rot[6];
+
 };
 
 
