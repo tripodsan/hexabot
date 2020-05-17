@@ -195,6 +195,8 @@ void GaitSequencer::Step(Vec3f *v) {
     v->x = 0;
     v->y = 0;
     v->z = 0;
+  } else {
+    v->z = 1; // todo: this might not be quite right.
   }
 
   printf("Gait step: %d. tx:%.2f ty:%.2f tz:%.2f\n", step, v->x, v->y, v->z);
@@ -205,9 +207,9 @@ void GaitSequencer::Step(Vec3f *v) {
 
   for (int i = 0; i < 6; i++) {
     Vec3f *p = &gait->seq[(gait->phase[i] + step) % gait->len];
-    pos[i].x = v->x * p->x;
+    pos[i].x = v->x;// * p->x;
     pos[i].y = v->y * p->y;
-    pos[i].z = legLiftHeight * p->z;
+    pos[i].z = legLiftHeight * p->z * v->z;
     rot[i] = 0;
     printf("  leg %d. p:%d x:%.2f y:%.2f z:%.2f, r:%.2f\n", i, gait->phase[i], pos[i].x, pos[i].y, pos[i].z, rot[i]);
   }

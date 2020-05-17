@@ -16,6 +16,7 @@
  *
  */
 #include "HexaPod.h"
+#include "InputController.h"
 
 HexaPod::HexaPod() {
   Reset();
@@ -23,13 +24,8 @@ HexaPod::HexaPod() {
   gait.legLiftHeight = 60;
 }
 
-void HexaPod::Step() {
-  Vec3f v;
-  v.x = 0;
-  v.y = 100; // seems to be max for tripod
-  v.z = 0;
-
-  gait.Step(&v);
+void HexaPod::Step(InputController* ctrl) {
+  gait.Step(&ctrl->v);
 
   for (int i = 0; i < 6; i++) {
     legs[i].dx = gait.pos[i].x;

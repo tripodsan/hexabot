@@ -21,6 +21,7 @@
 
 #include "HexLeg.h"
 #include "GaitSequencer.h"
+#include "InputController.h"
 
 class HexaPod {
 public:
@@ -30,7 +31,7 @@ public:
   void Reset();
   void IK();
   void PowerOff();
-  void Step();
+  void Step(InputController* ctrl);
 
   HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
 

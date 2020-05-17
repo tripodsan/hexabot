@@ -60,6 +60,7 @@ void PS2X::Poll() {
 }
 
 void PS2X::GetKeyState() {
+  memcpy(&prevState, &state, sizeof(PSXPad_KeyState_t));
   memset(&state, 0, sizeof(PSXPad_KeyState_t));
   state.type = PSXPAD_KEYSTATE_UNKNOWN;
   state.buttons = (uint16_t) pad.cmdResponse[3] | (uint16_t) pad.cmdResponse[4] << 8u;
@@ -115,6 +116,11 @@ void PS2X::GetKeyState() {
   }
 }
 
+bool PS2X::ButtonPressed(uint16_t btn) {
+  // check if button was not pressed in prev state and pressing in this state
+  return (prevState.buttons & btn) && !(state.buttons & btn);
+}
+
 void PS2X::command(const uint8_t cmd[], const uint8_t len) {
   int sent = device->transfer(cmd, pad.cmdResponse, len);
   if (sent < 0) {
@@ -150,3 +156,4 @@ void PS2X::dump() {
   printf("%2x %2x     ", state.btnAR1, state.btnAR2);
   printf("\n");
 }
+

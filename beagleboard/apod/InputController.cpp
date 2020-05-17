@@ -48,8 +48,7 @@ void InputController::reset() {
 void InputController::poll() {
   ps2->Poll();
   ps2->GetKeyState();
-
-  if (ps2->state.btnStt) {
+  if (ps2->ButtonPressed(PSB_START)) {
     powerOn = !powerOn;
   }
   if (!powerOn) {
@@ -144,7 +143,7 @@ void InputController::poll() {
   // walking
   else if (mode == ControllerMode::WALK) {
     v.x = -ps2->state.joyLXf * 100;
-    v.y = ps2->state.joyLYf * 100;
+    v.y = -ps2->state.joyLYf * 100;
     v.z = ps2->state.joyRXf * 30;
     bodyPos.z += ps2->state.joyRYf * 30;
     bodyPos.z = std::min(std::max(bodyPos.z, 0.0f), 100.0f);

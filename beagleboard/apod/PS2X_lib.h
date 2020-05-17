@@ -107,7 +107,11 @@ public:
 
   void dump();
 
+  bool ButtonPressed(uint16_t btn);
+
   PSXPad_KeyState_t state;
+
+  PSXPad_KeyState_t prevState;
 
 private:
   PSXPad_t pad;

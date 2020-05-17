@@ -179,9 +179,11 @@ void ik_loop(PS2X *ps2, SSCDriver *driver) {
 
 void gait_loop(PS2X *ps2, SSCDriver *driver) {
   HexaPod pod{};
+  InputController ctrl(ps2, &pod.gait);
+  ctrl.v.y = 100;
 
   while (rc_get_state() != EXITING) {
-    pod.Step();
+    pod.Step(&ctrl);
     for (int i=0; i < 6; i++) {
       driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
     }
@@ -273,6 +275,51 @@ int ctrl() {
   return 0;
 }
 
+int hex_loop(PS2X* ps2, SSCDriver *driver) {
+  HexaPod pod{};
+  InputController ctrl(ps2, &pod.gait);
+
+  while (rc_get_state() != EXITING) {
+    ctrl.poll();
+    ctrl.dump();
+    pod.Step(&ctrl);
+    for (int i=0; i < 6; i++) {
+      driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+    }
+    printf("step time: %d\n", pod.gait.gait->stepTime);
+    driver->Commit(pod.gait.gait->stepTime);
+    usleep(pod.gait.gait->stepTime*1000);
+  }
+
+  // power off
+  pod.PowerOff();
+  for (int i = 0; i < 6; i++) {
+    driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+  }
+  driver->Commit(600);
+  usleep(800*1000);
+  driver->FreeServos();
+  return 0;
+}
+
+int hex() {
+  SPIDevice spi(1,1);
+  spi.setSpeed(100000);
+  spi.setMode(SPIDevice::MODE3);
+  spi.setLSBFirst(1);
+  spi.debugDump();
+
+  PS2X ps2(&spi);
+  ps2.SetADMode(true, true);
+
+  SSCDriver driver{};
+  if (driver.Init() < 0) {
+    return -1;
+  }
+
+  return hex_loop(&ps2, &driver);
+}
+
 int run(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ps2")) {
     return ps2_test();
@@ -295,7 +342,10 @@ int run(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ctrl")) {
     return ctrl();
   }
-  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik|gait|ctrl)\n", argv[0]);
+  if (argc > 1 && !strcmp(argv[1], "hex")) {
+    return hex();
+  }
+  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik|gait|ctrl|hex)\n", argv[0]);
   return -1;
 }
 
