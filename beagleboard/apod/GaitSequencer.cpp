@@ -21,13 +21,6 @@
 #include <cstdio>
 #include <cstring>
 
-#define  cRR      0
-#define  cRM      1
-#define  cRF      2
-#define  cLR      3
-#define  cLM      4
-#define  cLF      5
-
 #define movementThreshold 4.0f // threshold above which a movement is required.
 
 Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)[6], uint16_t stepTime) {
@@ -178,6 +171,7 @@ GaitSequencer::GaitSequencer() {
   gaits[5] = &RIPPLE;
   gaits[6] = &RIPPLE_SLOW;
   gait = gaits[0];
+  curGait = 0;
 }
 
 void GaitSequencer::Select(int nr) {
@@ -185,9 +179,10 @@ void GaitSequencer::Select(int nr) {
     printf("Error: invalid gait type: %d. Choose a value from 0-%d", nr, numGaits - 1);
     return;
   }
+  curGait = nr;
   gait = gaits[nr];
   step = 0;
-  printf("Gait: %s (%d steps)\n", gait->name, gait->len);
+  printf("Gait [%d]: %s (%d steps)\n", curGait, gait->name, gait->len);
 }
 
 void GaitSequencer::Step(Vec3f *v) {

@@ -10,6 +10,7 @@
 #include "SSCDriver.h"
 #include "ServoOffsets.h"
 #include "HexaPod.h"
+#include "InputController.h"
 
 using namespace std;
 
@@ -34,13 +35,14 @@ int ps2_test(){
 
   ps2x.SetEnableMotor(false, true);
   ps2x.SetMotorLevel(0, 255);
-  while (true) {
+  while (rc_get_state() != EXITING) {
     ps2x.Poll();
     ps2x.GetKeyState();
     ps2x.dump();
     usleep(100*1000);
     ps2x.SetMotorLevel(0, 0);
   }
+  return 0;
 }
 
 // Sends a message to the client and displays the message on the console
@@ -154,9 +156,9 @@ void ik_loop(PS2X *ps2, SSCDriver *driver) {
       driver->WiggleServo(ALL_SERVOS_PINS[idx*3], pod.legs[idx].ac);
     }
 
-    pod.legs[idx].x += (ps2->state.joyLX - 128) / 100.0f;
-    pod.legs[idx].y -= (ps2->state.joyLY - 127) / 100.0f;
-    pod.legs[idx].z -= (ps2->state.joyRY - 127) / 100.0f;
+    pod.legs[idx].x += ps2->state.joyLXf * 2.0f;
+    pod.legs[idx].y -= ps2->state.joyLYf * 2.0f;
+    pod.legs[idx].z -= ps2->state.joyRYf * 2.0f;
 
     pod.legs[idx].IK();
 
@@ -246,6 +248,31 @@ int gait() {
   return 0;
 }
 
+void ctrl_loop(PS2X *ps2) {
+  GaitSequencer gait;
+  InputController ctrl(ps2, &gait);
+
+  while (rc_get_state() != EXITING) {
+    ctrl.poll();
+    ctrl.dump();
+    rc_usleep(100*1000);
+  }
+}
+
+int ctrl() {
+  SPIDevice spi(1,1);
+  spi.setSpeed(100000);
+  spi.setMode(SPIDevice::MODE3);
+  spi.setLSBFirst(1);
+  spi.debugDump();
+
+  PS2X ps2x(&spi);
+  ps2x.SetADMode(true, true);
+
+  ctrl_loop(&ps2x);
+  return 0;
+}
+
 int run(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "ps2")) {
     return ps2_test();
@@ -265,7 +292,10 @@ int run(int argc, char *argv[]){
   if (argc > 1 && !strcmp(argv[1], "gait")) {
     return gait();
   }
-  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik|gait)\n", argv[0]);
+  if (argc > 1 && !strcmp(argv[1], "ctrl")) {
+    return ctrl();
+  }
+  fprintf(stderr, "usage: %s (ps2|fwd|uart|cali|ik|gait|ctrl)\n", argv[0]);
   return -1;
 }
 

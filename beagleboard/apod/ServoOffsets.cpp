@@ -171,7 +171,7 @@ void ServoOffsets::Run() {
     buttons = ~ps2->state.buttons;
 
     if (ps2->state.btnR1) {
-      angle -= (float) (ps2->state.joyLY - 127) / 100.0f;
+      angle -= ps2->state.joyLYf * 2.0f;
       usleep(20 * 1000);
     } else {
       usleep(100 * 1000);

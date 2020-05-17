@@ -81,7 +81,12 @@ public:
   /**
    * Number of available gaits
    */
-  size_t numGaits;
+  int numGaits;
+
+  /**
+   * Current gait nr
+   */
+  int curGait;
 
   /**
    * List of gaits

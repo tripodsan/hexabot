@@ -69,9 +69,13 @@ typedef struct PSXPad_KeyState {
   uint8_t btnSqr;
   /* PSXPAD_KEYSTATE_ANALOG1 */
   uint8_t joyRX;
+  float joyRXf;
   uint8_t joyRY;
+  float joyRYf;
   uint8_t joyLX;
+  float joyLXf;
   uint8_t joyLY;
+  float joyLYf;
   /* PSXPAD_KEYSTATE_ANALOG2 */
   uint8_t padARight;
   uint8_t padALeft;

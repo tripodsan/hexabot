@@ -23,7 +23,7 @@
 
 class HexLeg {
 public:
-  HexLeg(const int idx);
+  explicit HexLeg(int idx);
 
 public:
   const int idx;

@@ -77,6 +77,16 @@
 #define cTailTiltPin     9  // Tail Tilt (vertical)
 
 //--------------------------------------------------------------------
+// leg numbers
+
+#define  cRR      0
+#define  cRM      1
+#define  cRF      2
+#define  cLR      3
+#define  cLM      4
+#define  cLF      5
+
+//--------------------------------------------------------------------
 // min/max angles
 
 #define cRRCoxaMin1     -65.0f      //Mechanical limits of the Right Rear Leg

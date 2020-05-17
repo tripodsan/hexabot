@@ -87,6 +87,10 @@ void PS2X::GetKeyState() {
       state.joyRY = pad.cmdResponse[6];
       state.joyLX = pad.cmdResponse[7];
       state.joyLY = pad.cmdResponse[8];
+      state.joyRXf = ((float) std::max((uint8_t) 1, state.joyRX) - 128) / 127;
+      state.joyRYf = ((float) std::min((uint8_t) 254, state.joyRY) - 127) / 127;
+      state.joyLXf = ((float) std::max((uint8_t) 1, state.joyLX) - 128) / 127;
+      state.joyLYf = ((float) std::min((uint8_t) 254, state.joyLY) - 127) / 127;
       // no break
     case 0x41:
       if(state.type == PSXPAD_KEYSTATE_UNKNOWN) {
@@ -131,14 +135,14 @@ void PS2X::command(const uint8_t cmd[], const uint8_t len) {
 }
 
 void PS2X::dump() {
-  cout << " U  D  L  R  Tri Sqr Crs Cir  L1 L2 L3 R1 R2 R3  Sel Stt  LX,LY  RX,RY \n";
+  cout << " U  D  L  R  Tri Sqr Crs Cir  L1 L2 L3 R1 R2 R3  Sel Stt  LX,LY                RX,RY \n";
   printf("%2d %2d %2d %2d  ", state.padUp, state.padDown, state.padLeft, state.padRight);
   printf("%3d %3d %3d %3d  ", state.btnTri, state.btnSqr, state.btnCrs, state.btnCir);
   printf("%2d %2d %2d ", state.btnL1, state.btnL2, state.btnL3);
   printf("%2d %2d %2d  ", state.btnR1, state.btnR2, state.btnR3);
   printf("%3d %3d  ", state.btnSel, state.btnStt);
-  printf("%2x,%2x  ", state.joyLX, state.joyLY);
-  printf("%2x,%2x  ", state.joyRX, state.joyRY);
+  printf("%2x,%2x (%5.2f,%5.2f)  ", state.joyLX, state.joyLY, state.joyLXf, state.joyLYf);
+  printf("%2x,%2x (%5.2f,%5.2f)  ", state.joyRX, state.joyRY, state.joyRXf, state.joyRYf);
   printf("\n");
   printf("%2x %2x %2x %2x  ", state.padAUp, state.padADown, state.padALeft, state.padARight);
   printf("%3x %3x %3x %3x  ", state.btnATri, state.btnASqr, state.btnACrs, state.btnACir);
