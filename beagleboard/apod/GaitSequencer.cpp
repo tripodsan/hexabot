@@ -56,18 +56,20 @@ Gait::Gait(const char *name, const int rs, const int ps, const int (&phase)[6], 
     return;
   }
   // return stroke
+  float dx = 1.0f / (float) rs;
   float dy = 1.0f / (float) rs;
   float dz = M_PI / (float) rs;
   for (int i = 0 ; i < rs; i++) {
-    this->seq[i].x = 0.0f;
+    this->seq[i].x = -0.5f + ((float) i)*dx;
     this->seq[i].y = -0.5f + ((float) i)*dy;
 
     this->seq[i].z = sinf(((float) i) * dz);
   }
   // power stroke
+  dx = 1.0f / (float) ps;
   dy = 1.0f / (float) ps;
   for (int i = 0 ; i < ps; i++) {
-    this->seq[i + rs].x = 0.0f;
+    this->seq[i + rs].x = 0.5f - ((float) i)*dx;
     this->seq[i + rs].y = 0.5f - ((float) i)*dy;
     this->seq[i + rs].z = 0.0f;
   }
@@ -192,11 +194,7 @@ void GaitSequencer::Step(Vec3f *v) {
 
   //Clear values under the movements threshold
   if (!moveCheck) {
-    v->x = 0;
-    v->y = 0;
-    v->z = 0;
-  } else {
-    v->z = 1; // todo: this might not be quite right.
+    return;
   }
 
   printf("Gait step: %d. tx:%.2f ty:%.2f tz:%.2f\n", step, v->x, v->y, v->z);
@@ -207,10 +205,10 @@ void GaitSequencer::Step(Vec3f *v) {
 
   for (int i = 0; i < 6; i++) {
     Vec3f *p = &gait->seq[(gait->phase[i] + step) % gait->len];
-    pos[i].x = v->x;// * p->x;
+    pos[i].x = v->x * p->x;
     pos[i].y = v->y * p->y;
-    pos[i].z = legLiftHeight * p->z * v->z;
-    rot[i] = 0;
+    pos[i].z = legLiftHeight * p->z;
+    rot[i] = v->z * p->x; // we modulate the z-rotation with the same as the x/y gait
     printf("  leg %d. p:%d x:%.2f y:%.2f z:%.2f, r:%.2f\n", i, gait->phase[i], pos[i].x, pos[i].y, pos[i].z, rot[i]);
   }
   step = (step + 1) % gait->len;

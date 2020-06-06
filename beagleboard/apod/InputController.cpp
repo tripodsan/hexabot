@@ -64,7 +64,7 @@ void InputController::poll() {
   }
 
   // switch modes
-  if (ps2->state.btnCrs) {
+  if (ps2->ButtonPressed(PSB_CROSS)) {
     if (mode != ControllerMode::SINGLE) {
       mode = ControllerMode{(static_cast<int>(mode) + 1) % 4};
     }
@@ -72,7 +72,7 @@ void InputController::poll() {
   }
 
   // single leg mode
-  if (ps2->state.btnCir) {
+  if (ps2->ButtonPressed(PSB_CIRCLE)) {
     if (mode != ControllerMode::SINGLE) {
       mode = ControllerMode::SINGLE;
       selectedLeg = 0;
@@ -83,13 +83,13 @@ void InputController::poll() {
   }
 
   // Switch Balance mode on/off
-  if (ps2->state.btnSqr) {
+  if (ps2->ButtonPressed(PSB_SQUARE)) {
     balanceMode = !balanceMode;
     printf("balance mode: %d\n", balanceMode);
   }
 
   // Stand up, sit down
-  if (ps2->state.btnTri) {
+  if (ps2->ButtonPressed(PSB_TRIANGLE)) {
     if (bodyPos.z != 0) {
       bodyPos.z = 0;
     } else {
@@ -113,11 +113,11 @@ void InputController::poll() {
       headPos.y = 0;
       headPos.z = 0;
     } else {
-      headPos.x += ps2->state.joyLYf * 2;
-      headPos.x = std::min(std::max(headPos.x, cHeadTiltMin1), cHeadTiltMax1);
-      headPos.y += ps2->state.joyLXf * 2;
-      headPos.y = std::min(std::max(headPos.y, cHeadPanMin1), cHeadPanMax1);
-      headPos.z += ps2->state.joyRXf * 2;
+      headPos.x -= ps2->state.joyLXf * 5;
+      headPos.x = std::min(std::max(headPos.x, cHeadPanMin1), cHeadPanMax1);
+      headPos.y -= ps2->state.joyLYf * 5;
+      headPos.y = std::min(std::max(headPos.y, cHeadTiltMin1), cHeadTiltMax1);
+      headPos.z -= ps2->state.joyRXf * 5;
       headPos.z = std::min(std::max(headPos.z, cHeadRotMin1), cHeadRotMax1);
     }
   }
@@ -127,41 +127,41 @@ void InputController::poll() {
       tailPos.x = 0;
       tailPos.y = 0;
     } else {
-      tailPos.x += ps2->state.joyLYf * 2;
-      tailPos.x = std::min(std::max(tailPos.x, cTailTiltMin1), cTailTiltMax1);
-      tailPos.y += ps2->state.joyLXf * 2;
-      tailPos.y = std::min(std::max(tailPos.y, cTailPanMin1), cTailPanMax1);
+      tailPos.x += ps2->state.joyLXf * 5;
+      tailPos.x = std::min(std::max(tailPos.x, cTailPanMin1), cTailPanMax1);
+      tailPos.y -= ps2->state.joyLYf * 5;
+      tailPos.y = std::min(std::max(tailPos.y, cTailTiltMin1), cTailTiltMax1);
     }
   }
 
   // switch gaits
-  else if (mode == ControllerMode::WALK && ps2->state.btnSel) {
+  else if (mode == ControllerMode::WALK && ps2->ButtonPressed(PSB_SELECT)) {
     // todo: only allow switch gait when stopped ?
     gait->Select((gait->curGait + 1) % gait->numGaits);
   }
 
   // walking
   else if (mode == ControllerMode::WALK) {
-    v.x = -ps2->state.joyLXf * 100;
-    v.y = -ps2->state.joyLYf * 100;
-    v.z = ps2->state.joyRXf * 30;
-    bodyPos.z += ps2->state.joyRYf * 30;
+    v.x = -ps2->state.joyLXf * 20;
+    v.y = -ps2->state.joyLYf * 20;
+    v.z = ps2->state.joyRXf * 10; // rotation around z
+    bodyPos.z += ps2->state.joyRYf * 10;
     bodyPos.z = std::min(std::max(bodyPos.z, 0.0f), 100.0f);
   }
 
   // translate mode
   if (mode == ControllerMode::TRANSLATE) {
-    bodyPos.x = ps2->state.joyLXf * 50;
+    bodyPos.x = -ps2->state.joyLXf * 50;
     bodyPos.y = ps2->state.joyLYf * 50;
     bodyPos.z = ps2->state.joyRYf * 50;
-    bodyRot.z = ps2->state.joyRXf * 180;
+    bodyRot.z = ps2->state.joyRXf * 45;
   }
 
   // tilt mode
   if (mode == ControllerMode::TILT) {
-    bodyRot.x = ps2->state.joyLYf * 90;
-    bodyRot.y = ps2->state.joyLXf * 90;
-    bodyRot.z = ps2->state.joyRXf * 180;
+    bodyRot.x = ps2->state.joyLXf * 30;
+    bodyRot.y = ps2->state.joyLYf * 30;
+    bodyRot.z = ps2->state.joyRXf * 30;
     bodyPos.z = ps2->state.joyRYf * 50;
   }
 
@@ -175,13 +175,6 @@ void InputController::poll() {
     legPos.y -= ps2->state.joyLYf * 2.0f;
     legPos.z -= ps2->state.joyRYf * 2.0f;
   }
-
-//      //Calculate walking time delay
-//      g_InControlState.InputTimeDelay = 128 - max(max(abs(ps2x.Analog(PSS_LX) - 128), abs(ps2x.Analog(PSS_LY) - 128)),
-//                                                  abs(ps2x.Analog(PSS_RX) - 128));
-
-    //Calculate g_InControlState.BodyPos.y
-//    g_InControlState.BodyPos.y = max(g_BodyYOffset + g_BodyYShift, 0);
 }
 
 void InputController::openMandibles(float angle) {
@@ -199,6 +192,7 @@ void InputController::dump() {
   printf("\033[2J\033[H");
   printf("-----------------------------\n");
   printf("   Power: %d\n", powerOn);
+  printf("    gait: %s\n", gait->gait->name);
   printf("    Mode: %s\n", CONTROLLER_MODE_NAMES[static_cast<int>(mode)].c_str());
   printf("bal mode: %d\n", balanceMode);
   printf("velocity: x:%.2f, y:%.2f, z:%.2f\n", v.x, v.y, v.z);

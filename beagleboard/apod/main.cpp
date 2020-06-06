@@ -156,11 +156,15 @@ void ik_loop(PS2X *ps2, SSCDriver *driver) {
       driver->WiggleServo(ALL_SERVOS_PINS[idx*3], pod.legs[idx].ac);
     }
 
-    pod.legs[idx].x += ps2->state.joyLXf * 2.0f;
-    pod.legs[idx].y -= ps2->state.joyLYf * 2.0f;
-    pod.legs[idx].z -= ps2->state.joyRYf * 2.0f;
+    pod.legs[idx].ix += ps2->state.joyLXf * 2.0f;
+    pod.legs[idx].iy -= ps2->state.joyLYf * 2.0f;
+    pod.legs[idx].iz -= ps2->state.joyRYf * 2.0f;
 
-    pod.legs[idx].IK();
+    pod.legs[idx].IK(
+        pod.legs[idx].ix,
+        pod.legs[idx].iy,
+        pod.legs[idx].iz
+    );
 
     driver->OutputServoLeg(idx, pod.legs[idx].ac, pod.legs[idx].af, pod.legs[idx].at);
     driver->Commit(10);
@@ -276,29 +280,62 @@ int ctrl() {
 }
 
 int hex_loop(PS2X* ps2, SSCDriver *driver) {
+  bool powerOn = false;
   HexaPod pod{};
   InputController ctrl(ps2, &pod.gait);
 
+  uint64_t nextStep = 0;
   while (rc_get_state() != EXITING) {
     ctrl.poll();
     ctrl.dump();
-    pod.Step(&ctrl);
-    for (int i=0; i < 6; i++) {
-      driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+
+    if (powerOn != ctrl.powerOn) {
+      powerOn = ctrl.powerOn;
+      if (!powerOn) {
+        printf("power off...");
+        // power off
+        pod.PowerOff();
+        for (int i = 0; i < 6; i++) {
+          driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+        }
+        driver->Commit(600);
+        usleep(800*1000);
+        driver->FreeServos();
+      } else {
+        nextStep = 0;
+        pod.Reset();
+      }
     }
-    printf("step time: %d\n", pod.gait.gait->stepTime);
-    driver->Commit(pod.gait.gait->stepTime);
-    usleep(pod.gait.gait->stepTime*1000);
+
+    if (powerOn) {
+      uint64_t now = rc_nanos_since_epoch();
+      if (now >= nextStep) {
+        pod.Step(&ctrl);
+        for (int i=0; i < 6; i++) {
+          driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+        }
+        driver->Commit(pod.gait.gait->stepTime);
+        nextStep = now + pod.gait.gait->stepTime * 1000 * 1000;
+        printf("step time: %d\n", pod.gait.gait->stepTime);
+      }
+      driver->OutputServoHead(ctrl.headPos.x, ctrl.headPos.y, ctrl.headPos.z);
+      driver->OutputServoTail(ctrl.tailPos.x, ctrl.tailPos.y);
+      driver->Commit(20);
+    }
+
+    usleep(20 * 1000);
   }
 
-  // power off
-  pod.PowerOff();
-  for (int i = 0; i < 6; i++) {
-    driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+  if (powerOn) {
+    // power off
+    pod.PowerOff();
+    for (int i = 0; i < 6; i++) {
+      driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
+    }
+    driver->Commit(600);
+    usleep(800*1000);
+    driver->FreeServos();
   }
-  driver->Commit(600);
-  usleep(800*1000);
-  driver->FreeServos();
   return 0;
 }
 

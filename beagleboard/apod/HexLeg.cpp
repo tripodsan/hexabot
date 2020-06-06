@@ -44,18 +44,14 @@ HexLeg::HexLeg(const int idx) :
     ox(LEG_OFFSET_X[idx]), oy(LEG_OFFSET_Y[idx]), oz(0.0f), acoxa(DEG2RAD(LEG_OFFSET_A[idx])),
     cmin(DEG2RAD(MIN_ANGLE_COXA[idx])), cmax(DEG2RAD(MAX_ANGLE_COXA[idx])),
     fmin(DEG2RAD(MIN_ANGLE_FEMUR[idx])), fmax(DEG2RAD(MAX_ANGLE_FEMUR[idx])),
-    tmin(DEG2RAD(MIN_ANGLE_TIBIA[idx])), tmax(DEG2RAD(MAX_ANGLE_TIBIA[idx])),
-    dx(0), dy(0), dz(0) {
+    tmin(DEG2RAD(MIN_ANGLE_TIBIA[idx])), tmax(DEG2RAD(MAX_ANGLE_TIBIA[idx])) {
 }
 
 void HexLeg::Reset() {
-  x = LEG_START_X[idx];
-  y = LEG_START_Y[idx];
-  z = LEG_START_Z[idx];
-  dx = 0;
-  dy = 0;
-  dz = 0;
-  IK();
+  ix = LEG_START_X[idx];
+  iy = LEG_START_Y[idx];
+  iz = LEG_START_Z[idx];
+  IK(0, 0, 0);
 }
 
 void HexLeg::PowerOff() {
@@ -64,7 +60,7 @@ void HexLeg::PowerOff() {
   at = RAD2DEG(tmax);
 }
 
-void HexLeg::IK() {
+void HexLeg::IK(float x, float y, float z) {
   //      x^2 + y^2 - l1^2 - l2^2
   // d = ------------------------
   //           2 * l1 * l2
@@ -78,9 +74,9 @@ void HexLeg::IK() {
 #define L2 cXXTibiaLength
 
   // adjust for body dimensions
-  float cx = x - ox + dx;
-  float cy = y - oy + dy;
-  float cz = z - oz + dz;
+  float cx = x - ox;
+  float cy = y - oy;
+  float cz = z - oz;
 
   // flip x for left legs
   if (idx >= 3) {

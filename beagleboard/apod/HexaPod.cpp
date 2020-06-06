@@ -18,6 +18,9 @@
 #include "HexaPod.h"
 #include "InputController.h"
 
+#define RAD2DEG(a) ((a) * 180.0f / (float) M_PI)
+#define DEG2RAD(a) ((a) * (float) M_PI / 180.0f)
+
 HexaPod::HexaPod() {
   Reset();
   gait.Select(0);
@@ -28,21 +31,28 @@ void HexaPod::Step(InputController* ctrl) {
   gait.Step(&ctrl->v);
 
   for (int i = 0; i < 6; i++) {
-    legs[i].dx = gait.pos[i].x;
-    legs[i].dy = gait.pos[i].y;
-    legs[i].dz = gait.pos[i].z;
-    legs[i].IK();
-  }
+    // position of foot relative to the body center
+    const float ix = legs[i].ix;
+    const float iy = legs[i].iy;
+    const float iz = legs[i].iz;
 
-//  LegIK(LegPosX[LegIndex] - g_InControlState.BodyPos.x + BodyFKPosX - (GaitPosX[LegIndex] - TotalTransX),
-//        LegPosY[LegIndex] + g_InControlState.BodyPos.y - BodyFKPosY + GaitPosY[LegIndex] - TotalTransY,
-//        LegPosZ[LegIndex] + g_InControlState.BodyPos.z - BodyFKPosZ + GaitPosZ[LegIndex] - TotalTransZ, LegIndex);
+    // rotate around body
+    const float ca = cosf(DEG2RAD(ctrl->bodyRot.z + gait.rot[i])); // alpha (yaw)
+    const float sa = sinf(DEG2RAD(ctrl->bodyRot.z + gait.rot[i]));
+    const float cb = cosf(DEG2RAD(ctrl->bodyRot.x)); // beta (pitch)
+    const float sb = sinf(DEG2RAD(ctrl->bodyRot.x));
+    const float cg = cosf(DEG2RAD(ctrl->bodyRot.y)); // gamma (roll)
+    const float sg = sinf(DEG2RAD(ctrl->bodyRot.y));
 
-}
+    float x = ctrl->bodyPos.x + ca*cb*ix + (ca*sb*sg-sa*cg)*iy + (ca*sb*cg+sa*sg)*iz;
+    float y = ctrl->bodyPos.y + sa*cb*ix + (sa*sb*sg+ca*cg)*iy + (sa*sb*cg-ca*sg)*iz;
+    float z = ctrl->bodyPos.z - sb*ix + cb*sg*iy + cb*cg*iz;
 
-void HexaPod::IK() {
-  for (auto & leg : legs) {
-    leg.IK();
+    legs[i].IK(
+        x + gait.pos[i].x,
+        y + gait.pos[i].y,
+        z + gait.pos[i].z
+    );
   }
 }
 

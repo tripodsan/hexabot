@@ -150,9 +150,9 @@
 //--------------------------------------------------------------------
 // Universal dimensions for each legs in mm
 
-#define cXXCoxaLength     50.0f
-#define cXXFemurLength    80.0f
-#define cXXTibiaLength    120.0f
+#define cXXCoxaLength     50.0f   // distance from coxa origin to femur servo
+#define cXXFemurLength    80.0f   // distance from femur servo to tibia servo
+#define cXXTibiaLength    120.0f  // distance from tibia servo to foot
 
 //--------------------------------------------------------------------
 // body dimensions

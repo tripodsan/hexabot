@@ -74,7 +74,7 @@ public:
    * It more or less specifies the distance the leg should travel within one
    * gait sequence cycle.
    *
-   * @param v Movement vector
+   * @param v Movement vector (note the v.z is used for z-rotation during walking)
    */
   void Step(Vec3f *v);
 

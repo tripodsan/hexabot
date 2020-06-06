@@ -27,18 +27,17 @@ public:
 
 public:
   const int idx;
-  const float ox, oy, oz; // position from body center
+  const float ox, oy, oz; // coxa position from body center
   const float cmin, cmax, fmin, fmax, tmin, tmax; // min/max angles for servos
   const float acoxa; // coxa angle
 
-  float x, y, z;  // (initial) foot position
-  float dx, dy, dz; // delta position
-  float ac; // coxa angle
-  float af; // femur angle
-  float at; // tibia angle
+  float ix, iy, iz;  // (initial) foot position relative to body center. only modified in single-leg mode.
+  float ac; // coxa angle, calculated in IK
+  float af; // femur angle, calculated in IK
+  float at; // tibia angle, calculated in IK
 
   void Reset();
-  void IK();
+  void IK(float x, float y, float z);
   void PowerOff();
 };
 

@@ -138,10 +138,10 @@ void SSCDriver::OutputServoTail(float pan, float tilt) {
   uint16_t panPWM = DEG2PWM(pan);
   uint16_t tltPWM = DEG2PWM(tilt);
   uint8_t data[] = {
-      cHeadPanPin  + 0x80,
+      cTailPanPin  + 0x80,
       static_cast<uint8_t>(panPWM >> 8u),
       static_cast<uint8_t>(panPWM & 0xffu),
-      cHeadTiltPin  + 0x80,
+      cTailTiltPin  + 0x80,
       static_cast<uint8_t>(tltPWM >> 8u),
       static_cast<uint8_t>(tltPWM & 0xffu),
   };
