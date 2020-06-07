@@ -187,12 +187,12 @@ void gait_loop(PS2X *ps2, SSCDriver *driver) {
   ctrl.v.y = 100;
 
   while (rc_get_state() != EXITING) {
-    pod.Step(&ctrl);
+    int time = pod.Step(&ctrl);
     for (int i=0; i < 6; i++) {
       driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
     }
-    driver->Commit(pod.gait.gait->stepTime);
-    usleep(pod.gait.gait->stepTime*1000);
+    driver->Commit(time);
+    usleep(time*1000);
 
     char data;
     while (read(STDIN_FILENO, &data, 1) <= 0) {
@@ -309,15 +309,19 @@ int hex_loop(PS2X* ps2, SSCDriver *driver) {
 
     if (powerOn) {
       uint64_t now = rc_nanos_since_epoch();
+      int time = 0;
       if (now >= nextStep) {
-        pod.Step(&ctrl);
+        time = pod.Step(&ctrl);
         for (int i=0; i < 6; i++) {
           driver->OutputServoLeg(i, pod.legs[i].ac, pod.legs[i].af, pod.legs[i].at);
         }
-        driver->Commit(pod.gait.gait->stepTime);
-        nextStep = now + pod.gait.gait->stepTime * 1000 * 1000;
-        printf("step time: %d\n", pod.gait.gait->stepTime);
+        if (ctrl.mode != ControllerMode::WALK) {
+          time = 50;
+        }
+        driver->Commit(time);
+        nextStep = now + time * 1000 * 1000;
       }
+      printf("step time: %d\n", time);
       driver->OutputServoHead(ctrl.headPos.x, ctrl.headPos.y, ctrl.headPos.z);
       driver->OutputServoTail(ctrl.tailPos.x, ctrl.tailPos.y);
       driver->Commit(20);

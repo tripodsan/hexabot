@@ -22,6 +22,10 @@
 
 static const std::string CONTROLLER_MODE_NAMES[] = {"Walk", "Translate", "Tilt", "Single Leg"};
 
+void add_clamped(float *v, float d, float min, float max) {
+  *v = std::min(std::max(*v + d, min),max);
+}
+
 InputController::InputController(PS2X *ps2, GaitSequencer *gait) : ps2(ps2), gait(gait) {
   powerOn = false;
   reset();
@@ -100,37 +104,29 @@ void InputController::poll() {
 
   // speed control
   if (ps2->state.padUp) {
-    changeSpeed(50);
+    add_clamped(&speed, 5, 10.0f, 150.0f);
   }
   if (ps2->state.padDown) {
-    changeSpeed(-50);
+    add_clamped(&speed, -5, 10.0f, 150.0f);
   }
 
   // head control
   if (mode == ControllerMode::WALK && ps2->state.btnR1) {
     if (ps2->state.btnL3) {
-      headPos.x = 0;
-      headPos.y = 0;
-      headPos.z = 0;
+      headPos.x = 0; headPos.y = 0; headPos.z = 0;
     } else {
-      headPos.x -= ps2->state.joyLXf * 5;
-      headPos.x = std::min(std::max(headPos.x, cHeadPanMin1), cHeadPanMax1);
-      headPos.y -= ps2->state.joyLYf * 5;
-      headPos.y = std::min(std::max(headPos.y, cHeadTiltMin1), cHeadTiltMax1);
-      headPos.z -= ps2->state.joyRXf * 5;
-      headPos.z = std::min(std::max(headPos.z, cHeadRotMin1), cHeadRotMax1);
+      add_clamped(&headPos.x, -ps2->state.joyLXf * 5, cHeadPanMin1, cHeadPanMax1);
+      add_clamped(&headPos.y, -ps2->state.joyLYf * 5, cHeadTiltMin1, cHeadTiltMax1);
+      add_clamped(&headPos.z, -ps2->state.joyRXf * 5, cHeadRotMin1, cHeadRotMin1);
     }
   }
   // tail control
   else if (mode == ControllerMode::WALK && ps2->state.btnR2) {
     if (ps2->state.btnL3) {
-      tailPos.x = 0;
-      tailPos.y = 0;
+      tailPos.x = 0;tailPos.y = 0;
     } else {
-      tailPos.x += ps2->state.joyLXf * 5;
-      tailPos.x = std::min(std::max(tailPos.x, cTailPanMin1), cTailPanMax1);
-      tailPos.y -= ps2->state.joyLYf * 5;
-      tailPos.y = std::min(std::max(tailPos.y, cTailTiltMin1), cTailTiltMax1);
+      add_clamped(&tailPos.x, ps2->state.joyLXf * 5, cTailPanMin1, cTailPanMax1);
+      add_clamped(&tailPos.y, ps2->state.joyLYf * 5, cTailTiltMin1, cTailTiltMin1);
     }
   }
 
@@ -142,27 +138,36 @@ void InputController::poll() {
 
   // walking
   else if (mode == ControllerMode::WALK) {
-    v.x = -ps2->state.joyLXf * 20;
-    v.y = -ps2->state.joyLYf * 20;
+    v.x = -ps2->state.joyLXf * speed;
+    v.y = -ps2->state.joyLYf * speed;
     v.z = ps2->state.joyRXf * 10; // rotation around z
-    bodyPos.z += ps2->state.joyRYf * 10;
-    bodyPos.z = std::min(std::max(bodyPos.z, 0.0f), 100.0f);
+    add_clamped(&bodyPos.z, ps2->state.joyRYf * 10, -50.0f, 50.0f);
   }
 
   // translate mode
   if (mode == ControllerMode::TRANSLATE) {
-    bodyPos.x = -ps2->state.joyLXf * 50;
-    bodyPos.y = ps2->state.joyLYf * 50;
-    bodyPos.z = ps2->state.joyRYf * 50;
-    bodyRot.z = ps2->state.joyRXf * 45;
+    if (ps2->state.btnL3 || ps2->state.btnR3) {
+      bodyPos.x = 0; bodyPos.y = 0;bodyPos.z = 0;
+      bodyRot.x = 0; bodyRot.y = 0;bodyRot.z = 0;
+    } else {
+      add_clamped(&bodyPos.x, -ps2->state.joyLXf * 5, -50.0f, 50.0f);
+      add_clamped(&bodyPos.y,  ps2->state.joyLYf * 5, -50.0f, 50.0f);
+      add_clamped(&bodyPos.z,  ps2->state.joyRYf * 5, -50.0f, 70.0f);
+      add_clamped(&bodyRot.z,  ps2->state.joyRXf * 2, -20.0f, 20.0f);
+    }
   }
 
   // tilt mode
   if (mode == ControllerMode::TILT) {
-    bodyRot.x = ps2->state.joyLXf * 30;
-    bodyRot.y = ps2->state.joyLYf * 30;
-    bodyRot.z = ps2->state.joyRXf * 30;
-    bodyPos.z = ps2->state.joyRYf * 50;
+    if (ps2->state.btnL3 || ps2->state.btnR3) {
+      bodyPos.x = 0; bodyPos.y = 0;bodyPos.z = 0;
+      bodyRot.x = 0; bodyRot.y = 0;bodyRot.z = 0;
+    } else {
+      add_clamped(&bodyRot.x, -ps2->state.joyLXf * 2, -20.0f, 20.0f);
+      add_clamped(&bodyRot.y, -ps2->state.joyLYf * 2, -20.0f, 20.0f);
+      add_clamped(&bodyRot.z, ps2->state.joyRXf * 2, -20.0f, 20.0f);
+      add_clamped(&bodyPos.z, ps2->state.joyRYf * 5, -50.0f, 70.0f);
+    }
   }
 
   // single leg
@@ -182,12 +187,6 @@ void InputController::openMandibles(float angle) {
   printf("mandible angle: %.2f\n", mandibleAngle);
 }
 
-void InputController::changeSpeed(int d) {
-  speed = std::min(std::max(speed + d, 0), 2000);
-  printf("speed: %d\n", speed);
-
-}
-
 void InputController::dump() {
   printf("\033[2J\033[H");
   printf("-----------------------------\n");
@@ -204,6 +203,6 @@ void InputController::dump() {
   printf("    mand: %.2f\n", mandibleAngle);
   printf(" sel leg: %d\n", selectedLeg);
   printf(" leg pos: x:%.2f, y:%.2f, z:%.2f\n", legPos.x, legPos.y, legPos.z);
-  printf("   speed: %d\n", speed);
+  printf("   speed: %0.2f\n", speed);
 }
 

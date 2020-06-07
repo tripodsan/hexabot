@@ -23,10 +23,9 @@
 
 #define movementThreshold 4.0f // threshold above which a movement is required.
 
-Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)[6], uint16_t stepTime) {
+Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)[6]) {
   this->name = name;
   this->len = len;
-  this->stepTime = stepTime;
   this->seq = (Vec3f *) malloc(sizeof(Vec3f) * len);
   float *x = seq;
   float *y = x + len;
@@ -43,10 +42,9 @@ Gait::Gait(const char *name, const int len, float *const seq, const int (&phase)
   }
 }
 
-Gait::Gait(const char *name, const int rs, const int ps, const int (&phase)[6], uint16_t stepTime) {
+Gait::Gait(const char *name, const int rs, const int ps, const int (&phase)[6]) {
   this->len = rs + ps;
   this->name = name;
-  this->stepTime = stepTime;
   this->seq = (Vec3f *) calloc(len, sizeof(Vec3f));
   for (int i = 0; i < 6; i++) {
     this->phase[i] = phase[i];
@@ -98,12 +96,12 @@ Gait::~Gait() {
  * LM: --------**--
  * LR: ----------**
  */
-static Gait WAVE = Gait("wave", 2, 10, {0, 2, 4, 6, 8, 10}, 100);
+static Gait WAVE = Gait("wave", 2, 10, {0, 2, 4, 6, 8, 10});
 
 /**
  * Slow Wave Gait:
  */
-static Gait WAVE_SLOW = Gait("wave slow", 4, 20, {0, 4, 8, 12, 16, 20}, 100);
+static Gait WAVE_SLOW = Gait("wave slow", 4, 20, {0, 4, 8, 12, 16, 20});
 
 /**
  * Half Wave Gait:
@@ -114,7 +112,7 @@ static Gait WAVE_SLOW = Gait("wave slow", 4, 20, {0, 4, 8, 12, 16, 20}, 100);
  * LM: ----****----
  * LR: --------****
  */
-static Gait WAVE_SYNC = Gait("wave sync", 4, 8, {0, 4, 8, 0, 4, 8}, 200);
+static Gait WAVE_SYNC = Gait("wave sync", 4, 8, {0, 4, 8, 0, 4, 8});
 
 
 /**
@@ -126,7 +124,7 @@ static Gait WAVE_SYNC = Gait("wave sync", 4, 8, {0, 4, 8, 0, 4, 8}, 200);
  * LM: ---**-
  * LR: *----*
  */
-static Gait RIPPLE = Gait("ripple", 2, 4, {0, 2, 4, 1, 3, 5}, 100);
+static Gait RIPPLE = Gait("ripple", 2, 4, {0, 2, 4, 1, 3, 5});
 
 /**
  * Slow Ripple Gait:
@@ -137,7 +135,7 @@ static Gait RIPPLE = Gait("ripple", 2, 4, {0, 2, 4, 1, 3, 5}, 100);
  * LM: ------****--
  * LR: **--------**
  */
-static Gait RIPPLE_SLOW = Gait("ripple slow", 4, 8, {0, 4, 8, 2, 6, 10}, 100);
+static Gait RIPPLE_SLOW = Gait("ripple slow", 4, 8, {0, 4, 8, 2, 6, 10});
 
 /**
  * Fast Tripod Gait:
@@ -148,7 +146,7 @@ static Gait RIPPLE_SLOW = Gait("ripple slow", 4, 8, {0, 4, 8, 2, 6, 10}, 100);
  * LM: **--
  * LR: --**
  */
-static Gait TRIPOD = Gait("tripod", 2, 2, {0, 2, 0, 2, 0, 2}, 100);
+static Gait TRIPOD = Gait("tripod", 2, 2, {0, 2, 0, 2, 0, 2});
 
 /**
  * Slow Tripod Gait:
@@ -159,7 +157,7 @@ static Gait TRIPOD = Gait("tripod", 2, 2, {0, 2, 0, 2, 0, 2}, 100);
  * LM: **********----------
  * LR: ----------**********
  */
-static Gait TRIPOD_SLOW = Gait("tripod slow", 10, 10, {0, 10, 0, 10, 0, 10}, 50);
+static Gait TRIPOD_SLOW = Gait("tripod slow", 10, 10, {0, 10, 0, 10, 0, 10});
 
 
 GaitSequencer::GaitSequencer() {
@@ -187,17 +185,46 @@ void GaitSequencer::Select(int nr) {
   printf("Gait [%d]: %s (%d steps)\n", curGait, gait->name, gait->len);
 }
 
-void GaitSequencer::Step(Vec3f *v) {
-  bool moveCheck = ((std::abs(v->x) > movementThreshold) ||
-                    (std::abs(v->y) > movementThreshold) ||
-                    (std::abs(v->z) > movementThreshold));
-
-  //Clear values under the movements threshold
-  if (!moveCheck) {
-    return;
+int GaitSequencer::Step(Vec3f *v) {
+  float vMax = std::max(std::abs(v->x), std::max(std::abs(v->y), std::abs(v->z)));
+  if (vMax < movementThreshold) {
+    return 50;
   }
+  const float rangeMax = 120;  // 100mm in 1 second would mean 1 gait cycle in 1 second.
+  const float timeMin = 10.0f / 1000; // don't drive servos faster than 10ms
+  const float timeGoal = 200.0f / 1000; // try to aim for 200mm/s
+  const float rangeGoal = 50; // try to aim for a step length of 50mm
+  const auto n = (float) gait->len;
 
-  printf("Gait step: %d. tx:%.2f ty:%.2f tz:%.2f\n", step, v->x, v->y, v->z);
+  // maximum speed this gait can reach
+  const float maxSpeed = rangeMax / (timeMin * n);
+  vMax = std::min(vMax, maxSpeed);
+
+  // given a time t, what is the error in respect to the goal?
+  // t_err = ((t - t_goal) / (t_goal)) ^ 2
+  // given a range r, what is the error in respect to the goal?
+  // r_err = ((r - r_goal) / (r_goal)) ^ 2
+  // r = t * n * v
+  // r_err = ((t * n * v - r_goal) / (r_goal)) ^ 2
+  // total_error = t_err + r_err
+  // -> solve for t and find minimum:
+  const float rg2 = rangeGoal * rangeGoal;
+  const float tg2 = timeGoal * timeGoal;
+  float t = (rg2 * timeGoal + tg2 * rangeGoal * n * vMax) / (rg2 + tg2 * n * n * vMax * vMax);
+  t = std::max(t, timeMin);
+  float r = t * n * vMax;
+  if (r > rangeMax) {
+    printf("overflow: %.2f > %.2f\n", r, rangeMax);
+    r = rangeMax;
+    t = r / ( n * vMax);
+    t = std::max(t, timeMin);
+  }
+  const float speed = r / (t * n);
+
+  // map the velocity to range
+  const float vAdjust = r / vMax;
+
+  printf("Gait step: %d. vMax: %0.2f, max:%.2f t:%0.2f, r: %0.2f, spd: %.2f, tx:%.2f ty:%.2f tz:%.2f\n", step, vMax, maxSpeed, t, r, speed, v->x, v->y, v->z);
   for (int i = 0; i < gait->len; i++) {
     printf("%f ", gait->seq[(step + i) % gait->len].z);
   }
@@ -205,11 +232,13 @@ void GaitSequencer::Step(Vec3f *v) {
 
   for (int i = 0; i < 6; i++) {
     Vec3f *p = &gait->seq[(gait->phase[i] + step) % gait->len];
-    pos[i].x = v->x * p->x;
-    pos[i].y = v->y * p->y;
+    pos[i].x = v->x * p->x * vAdjust;
+    pos[i].y = v->y * p->y * vAdjust;
     pos[i].z = legLiftHeight * p->z;
-    rot[i] = v->z * p->x; // we modulate the z-rotation with the same as the x/y gait
+    rot[i] = v->z * p->x * vAdjust; // we modulate the z-rotation with the same as the x/y gait
     printf("  leg %d. p:%d x:%.2f y:%.2f z:%.2f, r:%.2f\n", i, gait->phase[i], pos[i].x, pos[i].y, pos[i].z, rot[i]);
   }
   step = (step + 1) % gait->len;
+
+  return (int) (t * 1000.0f);
 }

@@ -25,7 +25,7 @@
 
 class Gait {
 public:
-  Gait(const char *name, int len,  float* seq, const int (&phase)[6], uint16_t stepTime);
+  Gait(const char *name, int len,  float* seq, const int (&phase)[6]);
 
   /**
    * Creates a gait pattern. The `rs` defines the number of steps a leg does a _return stroke_
@@ -48,7 +48,7 @@ public:
    * @param phase Phase array for the legs
    * @param stepTime Servo step time.
    */
-  Gait(const char *name, int rs, int ps, const int (&phase)[6], uint16_t stepTime);
+  Gait(const char *name, int rs, int ps, const int (&phase)[6]);
 
   ~Gait();
 
@@ -56,7 +56,6 @@ public:
   int phase[6];
   int len;
   Vec3f* seq;
-  uint8_t stepTime;
 };
 
 class GaitSequencer {
@@ -75,8 +74,9 @@ public:
    * gait sequence cycle.
    *
    * @param v Movement vector (note the v.z is used for z-rotation during walking)
+   * @return the step time
    */
-  void Step(Vec3f *v);
+  int Step(Vec3f *v);
 
   /**
    * Number of available gaits

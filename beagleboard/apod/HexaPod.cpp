@@ -27,8 +27,8 @@ HexaPod::HexaPod() {
   gait.legLiftHeight = 60;
 }
 
-void HexaPod::Step(InputController* ctrl) {
-  gait.Step(&ctrl->v);
+int HexaPod::Step(InputController* ctrl) {
+  int time = gait.Step(&ctrl->v);
 
   for (int i = 0; i < 6; i++) {
     // position of foot relative to the body center
@@ -54,6 +54,8 @@ void HexaPod::Step(InputController* ctrl) {
         z + gait.pos[i].z
     );
   }
+
+  return time;
 }
 
 void HexaPod::Reset() {

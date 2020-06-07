@@ -29,7 +29,7 @@ public:
 
   void Reset();
   void PowerOff();
-  void Step(InputController* ctrl);
+  int Step(InputController* ctrl);
 
   HexLeg legs[6]{HexLeg(0), HexLeg(1), HexLeg(2), HexLeg(3), HexLeg(4), HexLeg(5)};
 

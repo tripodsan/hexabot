@@ -93,10 +93,9 @@ public:
   bool balanceMode;
 
   /**
-   * Speed...
-   * todo: currently time of 1 gait sequence step. but need better definition
+   * Speed (mm/s)
    */
-  int speed;
+  float speed;
 
   InputController(PS2X *ps2, GaitSequencer *gait);
 
@@ -112,8 +111,6 @@ private:
   GaitSequencer* gait;
 
   void openMandibles(float angle);
-
-  void changeSpeed(int d);
 };
 
 
